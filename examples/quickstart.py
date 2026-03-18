@@ -9,24 +9,18 @@ Requirements:
     - pip install -r requirements.txt
 """
 
-import asyncio
-import os
+import anthropic
 
 from sdk.governance import Governance
-from sdk.adapters import get_adapter
 
 
-async def main():
+def main():
     gov = Governance(
         constitution_path="constitution/rules/default_v1.json",
         mode="sync",
     )
 
-    adapter = get_adapter("anthropic")
-
-    async def call_claude(prompt: str) -> str:
-        response = adapter.call(prompt)
-        return response.text
+    client = anthropic.Anthropic()
 
     prompts = [
         "Who discovered penicillin and where?",
@@ -39,24 +33,21 @@ async def main():
         print(f"PROMPT: {prompt}")
         print(f"{'='*60}")
 
-        result = await gov.wrap(
-            provider="anthropic",
-            call=lambda p=prompt: _sync_call(p),
+        raw_response = client.messages.create(
+            model="claude-3-5-sonnet-20260220",
+            max_tokens=512,
+            messages=[{"role": "user", "content": prompt}],
         )
 
-        print(f"RESPONSE: {result[:200]}...")
+        gov.wrap(
+            provider="anthropic",
+            raw_response=raw_response,
+            user_prompt=prompt,
+        )
 
-
-def _sync_call(prompt: str):
-    import anthropic
-    client = anthropic.Anthropic()
-    resp = client.messages.create(
-        model="claude-3-5-sonnet-20260220",
-        max_tokens=512,
-        messages=[{"role": "user", "content": prompt}],
-    )
-    return resp.content[0].text
+        text = raw_response.content[0].text
+        print(f"RESPONSE: {text[:200]}...")
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    main()

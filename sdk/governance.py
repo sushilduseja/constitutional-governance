@@ -8,9 +8,10 @@ import asyncio
 import json
 import logging
 import time
-from typing import Any, Callable, Literal, Optional
+from typing import Any, Literal, Optional
 
 from sdk.adapters import get_adapter
+from sdk.adapters.base import LLMResponse
 
 logger = logging.getLogger(__name__)
 
@@ -57,9 +58,11 @@ class Governance:
 
     Usage:
         gov = Governance(api_key="...", mode="async")
-        response = await gov.wrap(
+        raw_response = anthropic_client.messages.create(...)
+        response = gov.wrap(
             provider="anthropic",
-            call=lambda: llm.complete(prompt)
+            raw_response=raw_response,
+            user_prompt=prompt,
         )
     """
 
@@ -207,41 +210,39 @@ Respond with a JSON object only:
   "notes": "any additional observations"
 }}"""
 
-    async def wrap(
+    def wrap(
         self,
         provider: str,
-        call: Callable,
+        raw_response: Any,
         user_prompt: str = "",
     ) -> Any:
         """
         Wrap an LLM call with constitutional governance.
 
+        The caller makes the LLM call directly, passes the raw response object,
+        and governance extracts text + model ID using the provider's adapter.
+
         Args:
             provider: LLM provider ('anthropic', 'openai', etc.)
-            call: The LLM call as a callable (lambda or function).
-                  Must return an LLMResponse object from the adapter.
+            raw_response: The raw response object from the LLM call.
+                          Must match the provider's response type.
             user_prompt: The original user prompt (for interpreter context).
-                        Defaults to empty string.
+                         Defaults to empty string.
 
         Returns:
-            The original LLM response (unmodified by governance)
+            The original raw_response (unmodified by governance)
         """
         start = time.time()
         request_id = f"req_{int(start * 1000)}"
 
         adapter = get_adapter(provider)
-
-        if self.mode == "fire-and-forget":
-            return await self._fire_and_forget(request_id, call, adapter)
-
-        response = await asyncio.to_thread(call)
-        text = adapter.extract_text(response)
-        model = adapter.get_model_id(response)
+        text = adapter.extract_text(raw_response)
+        model = adapter.get_model_id(raw_response)
 
         skip_reason = self._validate_input(text)
         if skip_reason:
             logger.info(f"Skipping evaluation: {skip_reason}")
-            await self._log_evaluation(
+            self._log_evaluation(
                 request_id=request_id,
                 user_prompt=user_prompt,
                 llm_response=text,
@@ -256,17 +257,20 @@ Respond with a JSON object only:
                 ),
                 latency_ms=int((time.time() - start) * 1000),
             )
-            return response
+            return raw_response
+
+        if self.mode == "fire-and-forget":
+            logger.info(f"Fire-and-forget: captured {len(text)} chars, no evaluation")
+            return raw_response
 
         if self.mode == "async":
-            task = asyncio.create_task(
+            asyncio.create_task(
                 self._evaluate_async(request_id, user_prompt, text, model, provider, start)
-            )
-            task.add_done_callback(self._handle_task_exception)
-            return response
+            ).add_done_callback(self._handle_task_exception)
+            return raw_response
 
-        result = await self._evaluate_sync(user_prompt, text, model, provider)
-        await self._log_evaluation(
+        result = self._evaluate_sync(user_prompt, text, model, provider)
+        self._log_evaluation(
             request_id=request_id,
             user_prompt=user_prompt,
             llm_response=text,
@@ -275,7 +279,7 @@ Respond with a JSON object only:
             result=result,
             latency_ms=int((time.time() - start) * 1000),
         )
-        return response
+        return raw_response
 
     def _handle_task_exception(self, task: asyncio.Task) -> None:
         """Handle unhandled exceptions from background tasks."""
@@ -284,19 +288,7 @@ Respond with a JSON object only:
         except Exception as e:
             logger.exception(f"Background evaluation task failed: {e}")
 
-    async def _fire_and_forget(
-        self,
-        request_id: str,
-        call: Callable,
-        adapter,
-    ) -> Any:
-        """Fire-and-forget: just log raw I/O, no evaluation."""
-        response = await asyncio.to_thread(call)
-        text = adapter.extract_text(response)
-        logger.info(f"Fire-and-forget: captured {len(text)} chars, no evaluation")
-        return response
-
-    async def _evaluate_sync(
+    def _evaluate_sync(
         self,
         user_prompt: str,
         llm_response: str,
@@ -317,13 +309,10 @@ Respond with a JSON object only:
 
             for chunk in chunks:
                 prompt = self._build_interpreter_prompt(rules, user_prompt, chunk)
-                raw = await asyncio.to_thread(
-                    lambda p=prompt: interpreter_adapter.call(p)
-                )
-
-                result = self._parse_interpreter_response(raw.text)
-                if result:
-                    all_violations.extend(result.get("violations", []))
+                raw = interpreter_adapter.call(prompt)
+                parsed = self._parse_interpreter_response(raw.text)
+                if parsed:
+                    all_violations.extend(parsed.get("violations", []))
 
             has_violations = len(all_violations) > 0
 
@@ -337,14 +326,61 @@ Respond with a JSON object only:
             )
 
         except Exception as e:
-            logger.error(f"Evaluation failed: {e}")
+            return self._handle_evaluation_error(e, llm_response)
+
+    def _handle_evaluation_error(self, error: Exception, llm_response: str) -> EvaluationResult:
+        """
+        Handle evaluation errors with specific exception types.
+
+        Error categories:
+        - AuthenticationError: Wrong API key — CRITICAL, no retry, alert
+        - RateLimitError: Rate limited — retry with backoff (done by caller if sync)
+        - APITimeoutError: Timeout — retry with backoff
+        - Other: Generic failure, log and return
+        """
+        error_type = type(error).__name__
+
+        if "AuthenticationError" in error_type or "auth" in str(error).lower():
+            logger.critical(
+                f"Authentication failure during evaluation: {error}. "
+                f"Check ANTHROPIC_API_KEY. Evaluation skipped."
+            )
             return EvaluationResult(
                 compliant=True,
                 score=0.0,
                 violations=[],
                 status="failed",
-                failure_reason=str(e),
+                failure_reason=f"auth_error: {error}",
             )
+
+        if "RateLimitError" in error_type or "429" in str(error):
+            logger.warning(f"Rate limited during evaluation: {error}. Consider reducing concurrency.")
+            return EvaluationResult(
+                compliant=True,
+                score=0.0,
+                violations=[],
+                status="failed",
+                failure_reason=f"rate_limited: {error}",
+            )
+
+        if "APITimeoutError" in error_type or "timeout" in str(error).lower():
+            logger.warning(f"Timeout during evaluation: {error}")
+            return EvaluationResult(
+                compliant=True,
+                score=0.0,
+                violations=[],
+                status="failed",
+                failure_reason=f"timeout: {error}",
+            )
+
+        logger.error(f"Evaluation failed: {error}")
+        return EvaluationResult(
+            compliant=True,
+            score=0.0,
+            violations=[],
+            status="failed",
+            failure_reason=str(error),
+        )
 
     def _parse_interpreter_response(self, raw_text: str) -> Optional[dict]:
         """
@@ -383,9 +419,14 @@ Respond with a JSON object only:
         provider: str,
         start: float,
     ) -> None:
-        """Background evaluation task."""
-        result = await self._evaluate_sync(user_prompt, llm_response, model, provider)
-        await self._log_evaluation(
+        """Background evaluation task — runs in thread pool to avoid blocking."""
+        try:
+            result = await asyncio.to_thread(
+                self._evaluate_sync, user_prompt, llm_response, model, provider
+            )
+        except Exception as e:
+            result = self._handle_evaluation_error(e, llm_response)
+        self._log_evaluation(
             request_id=request_id,
             user_prompt=user_prompt,
             llm_response=llm_response,
@@ -395,7 +436,7 @@ Respond with a JSON object only:
             latency_ms=int((time.time() - start) * 1000),
         )
 
-    async def _log_evaluation(
+    def _log_evaluation(
         self,
         request_id: str,
         user_prompt: str,
@@ -408,7 +449,7 @@ Respond with a JSON object only:
         """
         Log evaluation to the audit store.
 
-        MVP: writes to SQLite. Production: sends to governance service.
+        MVP: logs via standard logging. Production: sends to governance service.
         """
         audit_record = {
             "id": f"eval_{request_id}",
@@ -425,4 +466,8 @@ Respond with a JSON object only:
             "failure_reason": result.failure_reason,
         }
 
-        logger.info(f"Evaluation {audit_record['id']}: status={result.status}, compliant={result.compliant}, violations={len(result.violations)}")
+        logger.info(
+            f"Evaluation {audit_record['id']}: "
+            f"status={result.status}, compliant={result.compliant}, "
+            f"violations={len(result.violations)}"
+        )
