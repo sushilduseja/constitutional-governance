@@ -1,7 +1,7 @@
 # CLAUDE.md — AI Governance MVP
 
 > Project: AI Governance & Safety MVP
-> Architecture: `docs/designs/ai-governance-mvp.md`
+> Architecture: `docs/designs/constitutional-governance.md`
 > TODOs: `TODOS.md`
 
 ---
@@ -22,7 +22,7 @@ This is a greenfield project building a model-agnostic constitutional AI monitor
 ## Interpreter LLM
 
 - **Provider**: Anthropic (Claude 3.5 Sonnet)
-- **Prompt**: Defined in `docs/designs/ai-governance-mvp.md` Section 5
+- **Prompt**: Defined in `docs/designs/constitutional-governance.md` Section 5
 - **Prompt versioning**: Store prompts in `constitution/interpreter_prompts/v{N}.md`
 - **Output format**: Structured JSON (see Section 5 for schema)
 - **Parse robustness**: Always handle malformed JSON — the LLM is unreliable at strict formatting
@@ -46,19 +46,19 @@ This is a greenfield project building a model-agnostic constitutional AI monitor
 ## Audit Log
 
 - **Storage**: SQLite (MVP), PostgreSQL (production)
-- **Schema**: Defined in `docs/designs/ai-governance-mvp.md` Section 7
+- **Schema**: Defined in `docs/designs/constitutional-governance.md` Section 7
 - **Immutability**: Append-only. No UPDATE or DELETE operations.
 - **PII**: No PII stored by default. Configure redaction pipeline if needed.
 
 ## File Structure (Target)
 
 ```
-ai-governance-mvp/
+constitutional-governance/
 ├── CLAUDE.md              # This file
 ├── TODOS.md               # Deferred work
 ├── docs/
 │   └── designs/
-│       └── ai-governance-mvp.md   # Architecture doc
+│       └── constitutional-governance.md   # Architecture doc
 ├── constitution/
 │   ├── rules/
 │   │   └── default_v1.json       # Default constitution

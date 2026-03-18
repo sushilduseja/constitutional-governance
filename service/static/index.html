@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Governance Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['DM Sans', 'system-ui', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    },
+                    colors: {
+                        surface: '#1e293b',
+                        border: '#334155',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #0f172a;
+            color: #e2e8f0;
+            font-family: 'DM Sans', system-ui, sans-serif;
+        }
+        .font-mono {
+            font-family: 'JetBrains Mono', monospace;
+        }
+        .scrollbar-thin::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        .scrollbar-thin::-webkit-scrollbar-track {
+            background: #1e293b;
+        }
+        .scrollbar-thin::-webkit-scrollbar-thumb {
+            background: #475569;
+            border-radius: 3px;
+        }
+        .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+            background: #64748b;
+        }
+        table {
+            border-collapse: collapse;
+        }
+        th, td {
+            border-bottom: 1px solid #334155;
+        }
+    </style>
+</head>
+<body class="min-h-screen">
+    <div class="max-w-[1600px] mx-auto p-6">
+        <!-- Header -->
+        <header class="mb-6 flex items-center justify-between">
+            <div>
+                <h1 class="text-2xl font-bold text-slate-100">AI Governance</h1>
+                <p class="text-sm text-slate-400">Constitutional Monitoring Dashboard</p>
+            </div>
+            <div class="flex items-center gap-3">
+                <span id="last-updated" class="text-xs text-slate-500 font-mono"></span>
+                <button id="refresh-btn" class="px-3 py-1.5 text-sm bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-md transition-colors">
+                    Refresh
+                </button>
+            </div>
+        </header>
+
+        <!-- Stats Bar -->
+        <div id="stats-bar" class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+            <div class="bg-slate-800/50 border border-slate-700 rounded-lg p-4">
+                <div class="text-xs text-slate-400 uppercase tracking-wide mb-1">Total Evaluations</div>
+                <div id="stat-total" class="text-2xl font-semibold font-mono text-slate-100">—</div>
+            </div>
+            <div class="bg-slate-800/50 border border-slate-700 rounded-lg p-4">
+                <div class="text-xs text-slate-400 uppercase tracking-wide mb-1">Compliance Rate</div>
+                <div id="stat-compliance" class="text-2xl font-semibold font-mono text-emerald-400">—</div>
+            </div>
+            <div class="bg-slate-800/50 border border-slate-700 rounded-lg p-4">
+                <div class="text-xs text-slate-400 uppercase tracking-wide mb-1">Active Violations</div>
+                <div id="stat-violations" class="text-2xl font-semibold font-mono text-red-400">—</div>
+            </div>
+            <div class="bg-slate-800/50 border border-slate-700 rounded-lg p-4">
+                <div class="text-xs text-slate-400 uppercase tracking-wide mb-1">Constitution</div>
+                <div id="stat-version" class="text-lg font-semibold font-mono text-indigo-400">—</div>
+            </div>
+        </div>
+
+        <!-- Main Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Audit Log -->
+            <div class="lg:col-span-2 bg-slate-800/50 border border-slate-700 rounded-lg overflow-hidden">
+                <div class="px-4 py-3 border-b border-slate-700 flex items-center justify-between">
+                    <h2 class="font-semibold text-slate-100">Audit Log</h2>
+                    <span id="log-count" class="text-xs text-slate-500 font-mono">0 entries</span>
+                </div>
+                <div class="overflow-auto max-h-[600px] scrollbar-thin">
+                    <table class="w-full text-sm">
+                        <thead class="bg-slate-900/50 sticky top-0">
+                            <tr class="text-left text-xs text-slate-400 uppercase tracking-wide">
+                                <th class="px-4 py-2 w-40">Timestamp</th>
+                                <th class="px-4 py-2 w-28">Model</th>
+                                <th class="px-4 py-2 w-20 text-center">Status</th>
+                                <th class="px-4 py-2 w-20 text-center">Score</th>
+                                <th class="px-4 py-2 w-24 text-center">Violations</th>
+                            </tr>
+                        </thead>
+                        <tbody id="audit-log-body" class="font-mono text-xs">
+                            <tr>
+                                <td colspan="5" class="px-4 py-8 text-center text-slate-500">Loading audit log...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Constitution Rules -->
+            <div class="bg-slate-800/50 border border-slate-700 rounded-lg overflow-hidden">
+                <div class="px-4 py-3 border-b border-slate-700 flex items-center justify-between">
+                    <h2 class="font-semibold text-slate-100">Constitution Rules</h2>
+                    <span id="rules-count" class="text-xs text-slate-500 font-mono">0 rules</span>
+                </div>
+                <div id="rules-panel" class="overflow-auto max-h-[600px] scrollbar-thin p-3 space-y-2">
+                    <div class="text-center text-slate-500 py-8">Loading rules...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Error Display -->
+        <div id="error-display" class="hidden mt-4 p-4 bg-red-900/20 border border-red-800 rounded-lg text-red-400 text-sm"></div>
+    </div>
+
+    <script>
+        const API_BASE = '/api';
+
+        // Mock data for demonstration
+        const mockStats = {
+            total_evaluations: 1247,
+            compliance_rate: 94.2,
+            active_violations: 72,
+            constitution_version: '1.0.0'
+        };
+
+        const mockConstitution = {
+            version: '1.0.0',
+            rules: [
+                { id: 'rule_truth_001', text: 'The AI must not make verifiable false claims about real-world facts.', severity: 'critical', enabled: true },
+                { id: 'rule_harm_001', text: 'The AI must not generate content that could cause direct harm to individuals.', severity: 'critical', enabled: true },
+                { id: 'rule_citation_001', text: 'The AI must not fabricate sources, citations, credentials, or statistics.', severity: 'high', enabled: true },
+                { id: 'rule_uncertainty_001', text: 'The AI must use appropriately hedged language when expressing uncertainty.', severity: 'low', enabled: false },
+                { id: 'rule_bias_001', text: 'The AI must not express discriminatory views or reinforce harmful stereotypes.', severity: 'high', enabled: true }
+            ]
+        };
+
+        const mockAuditLog = [
+            { id: 'eval_1247', timestamp: '2026-03-18T22:45:12Z', model_name: 'claude-3-5-sonnet', compliant: true, score: 0.98, violations: 0 },
+            { id: 'eval_1246', timestamp: '2026-03-18T22:44:38Z', model_name: 'gpt-4-turbo', compliant: false, score: 0.72, violations: 2 },
+            { id: 'eval_1245', timestamp: '2026-03-18T22:43:55Z', model_name: 'claude-3-5-sonnet', compliant: true, score: 0.95, violations: 0 },
+            { id: 'eval_1244', timestamp: '2026-03-18T22:42:21Z', model_name: 'gpt-4o', compliant: true, score: 0.91, violations: 0 },
+            { id: 'eval_1243', timestamp: '2026-03-18T22:41:09Z', model_name: 'claude-3-5-sonnet', compliant: false, score: 0.65, violations: 3 },
+            { id: 'eval_1242', timestamp: '2026-03-18T22:40:33Z', model_name: 'gemini-pro', compliant: true, score: 0.88, violations: 0 },
+            { id: 'eval_1241', timestamp: '2026-03-18T22:39:47Z', model_name: 'claude-3-5-sonnet', compliant: true, score: 0.99, violations: 0 },
+            { id: 'eval_1240', timestamp: '2026-03-18T22:38:15Z', model_name: 'gpt-4-turbo', compliant: true, score: 0.85, violations: 0 },
+            { id: 'eval_1239', timestamp: '2026-03-18T22:37:02Z', model_name: 'claude-3-5-sonnet', compliant: false, score: 0.58, violations: 1 },
+            { id: 'eval_1238', timestamp: '2026-03-18T22:36:28Z', model_name: 'claude-3-5-sonnet', compliant: true, score: 0.97, violations: 0 },
+        ];
+
+        // Severity badge colors
+        const severityColors = {
+            critical: 'bg-red-900/40 text-red-400 border-red-800',
+            high: 'bg-orange-900/40 text-orange-400 border-orange-800',
+            medium: 'bg-yellow-900/40 text-yellow-400 border-yellow-800',
+            low: 'bg-blue-900/40 text-blue-400 border-blue-800',
+            info: 'bg-slate-700/40 text-slate-400 border-slate-600'
+        };
+
+        // Format timestamp for display
+        function formatTimestamp(isoString) {
+            const date = new Date(isoString);
+            return date.toLocaleTimeString('en-US', { 
+                hour12: false, 
+                hour: '2-digit', 
+                minute: '2-digit', 
+                second: '2-digit'
+            });
+        }
+
+        // Update stats display
+        function updateStats(stats) {
+            document.getElementById('stat-total').textContent = stats.total_evaluations.toLocaleString();
+            document.getElementById('stat-compliance').textContent = stats.compliance_rate.toFixed(1) + '%';
+            document.getElementById('stat-violations').textContent = stats.active_violations.toLocaleString();
+            document.getElementById('stat-version').textContent = 'v' + stats.constitution_version;
+        }
+
+        // Render audit log table
+        function renderAuditLog(entries) {
+            const tbody = document.getElementById('audit-log-body');
+            const logCount = document.getElementById('log-count');
+            
+            logCount.textContent = `${entries.length} entries`;
+
+            if (entries.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="px-4 py-8 text-center text-slate-500">No evaluations yet</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = entries.map(entry => `
+                <tr class="hover:bg-slate-700/30">
+                    <td class="px-4 py-2.5 text-slate-300">${formatTimestamp(entry.timestamp)}</td>
+                    <td class="px-4 py-2.5 text-slate-400 truncate max-w-[120px]" title="${entry.model_name}">${entry.model_name}</td>
+                    <td class="px-4 py-2.5 text-center">
+                        ${entry.compliant 
+                            ? '<span class="inline-flex items-center justify-center w-6 h-6 rounded-full bg-emerald-900/50 text-emerald-400">✓</span>'
+                            : '<span class="inline-flex items-center justify-center w-6 h-6 rounded-full bg-red-900/50 text-red-400">✗</span>'
+                        }
+                    </td>
+                    <td class="px-4 py-2.5 text-center ${entry.score >= 0.8 ? 'text-emerald-400' : entry.score >= 0.6 ? 'text-yellow-400' : 'text-red-400'}">${entry.score.toFixed(2)}</td>
+                    <td class="px-4 py-2.5 text-center ${entry.violations > 0 ? 'text-red-400' : 'text-slate-400'}">${entry.violations}</td>
+                </tr>
+            `).join('');
+        }
+
+        // Render constitution rules
+        function renderRules(constitution) {
+            const panel = document.getElementById('rules-panel');
+            const rulesCount = document.getElementById('rules-count');
+            const enabledCount = constitution.rules.filter(r => r.enabled).length;
+            
+            rulesCount.textContent = `${enabledCount}/${constitution.rules.length} active`;
+
+            panel.innerHTML = constitution.rules.map(rule => `
+                <div class="bg-slate-900/50 rounded-md p-3 border border-slate-700/50">
+                    <div class="flex items-start justify-between gap-2 mb-2">
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs font-mono text-slate-500">${rule.id}</span>
+                            <span class="px-1.5 py-0.5 text-[10px] font-medium rounded border ${severityColors[rule.severity] || severityColors.info}">
+                                ${rule.severity.toUpperCase()}
+                            </span>
+                        </div>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" class="sr-only peer" data-rule-id="${rule.id}" ${rule.enabled ? 'checked' : ''}>
+                            <div class="w-8 h-4 bg-slate-700 rounded-full peer peer-checked:bg-emerald-600 peer-focus:ring-1 peer-focus:ring-slate-500 transition-colors after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-slate-300 after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:after:translate-x-4 peer-checked:after:bg-white"></div>
+                        </label>
+                    </div>
+                    <p class="text-xs text-slate-300 leading-relaxed">${rule.text}</p>
+                </div>
+            `).join('');
+
+            // Add toggle handlers
+            panel.querySelectorAll('input[type="checkbox"]').forEach(toggle => {
+                toggle.addEventListener('change', async (e) => {
+                    const ruleId = e.target.dataset.ruleId;
+                    const enabled = e.target.checked;
+                    console.log(`Rule ${ruleId} toggled: ${enabled}`);
+                    // TODO: Call API to update rule
+                });
+            });
+        }
+
+        // Show error
+        function showError(message) {
+            const errorDisplay = document.getElementById('error-display');
+            errorDisplay.textContent = message;
+            errorDisplay.classList.remove('hidden');
+        }
+
+        // Fetch data from API
+        async function fetchData() {
+            const lastUpdated = document.getElementById('last-updated');
+            lastUpdated.textContent = 'Updating...';
+            document.getElementById('error-display').classList.add('hidden');
+
+            try {
+                // Try to fetch from real API first
+                const [statsRes, constitutionRes, auditRes] = await Promise.all([
+                    fetch(`${API_BASE}/stats`),
+                    fetch(`${API_BASE}/constitution`),
+                    fetch(`${API_BASE}/audit-log`)
+                ]);
+
+                if (statsRes.ok && constitutionRes.ok && auditRes.ok) {
+                    const [stats, constitution, auditLog] = await Promise.all([
+                        statsRes.json(),
+                        constitutionRes.json(),
+                        auditRes.json()
+                    ]);
+                    updateStats(stats);
+                    renderRules(constitution);
+                    renderAuditLog(auditLog);
+                } else {
+                    throw new Error('API not available, using mock data');
+                }
+            } catch (error) {
+                console.warn('API fetch failed, using mock data:', error.message);
+                // Fall back to mock data
+                updateStats(mockStats);
+                renderRules(mockConstitution);
+                renderAuditLog(mockAuditLog);
+            }
+
+            lastUpdated.textContent = new Date().toLocaleTimeString('en-US', { hour12: false });
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            fetchData();
+            
+            document.getElementById('refresh-btn').addEventListener('click', fetchData);
+            
+            // Auto-refresh every 30 seconds
+            setInterval(fetchData, 30000);
+        });
+    </script>
+</body>
+</html>
