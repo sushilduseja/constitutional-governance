@@ -12,7 +12,7 @@ Requirements:
 import asyncio
 import os
 
-from sdk import Governance
+from sdk.governance import Governance
 from sdk.adapters import get_adapter
 
 

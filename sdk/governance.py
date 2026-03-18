@@ -56,7 +56,7 @@ class Governance:
     Constitutional AI governance wrapper.
 
     Usage:
-        gov = Governance(api_key="...", async_mode=True)
+        gov = Governance(api_key="...", mode="async")
         response = await gov.wrap(
             provider="anthropic",
             call=lambda: llm.complete(prompt)
@@ -87,7 +87,7 @@ class Governance:
         try:
             with open(self.constitution_path, "r") as f:
                 self._constitution = json.load(f)
-            logger.info(f"Loaded constitution v{self._constitution.get('version', 'unknown')}")
+            logger.info(f"Loaded constitution v{self._get_constitution_version()}")
         except FileNotFoundError:
             logger.warning(f"Constitution file not found: {self.constitution_path}")
             self._constitution = {"version": "unknown", "rules": []}
@@ -95,16 +95,27 @@ class Governance:
             logger.error(f"Invalid JSON in constitution: {e}")
             self._constitution = {"version": "error", "rules": []}
 
-    def _validate_input(self, user_prompt: str, llm_response: str) -> Optional[str]:
+    def _get_constitution_version(self) -> str:
+        """Safely get constitution version, handling None case."""
+        if self._constitution is None:
+            return "unknown"
+        return self._constitution.get("version", "unknown")
+
+    def _get_constitution_rules(self) -> list[dict]:
+        """Safely get constitution rules list, handling None case."""
+        if self._constitution is None:
+            return []
+        return self._constitution.get("rules", [])
+
+    def _validate_input(self, llm_response: str) -> Optional[str]:
         """
         Validate inputs before evaluation. Returns skip reason or None.
 
         Validates:
         - Constitution exists and has rules
         - Output is not empty/whitespace
-        - SDK is enabled
         """
-        if not self._constitution or not self._constitution.get("rules"):
+        if not self._get_constitution_rules():
             return "no_constitution"
 
         stripped = llm_response.strip()
@@ -115,7 +126,7 @@ class Governance:
 
     def _format_constitution_rules(self) -> str:
         """Format constitution rules for the interpreter prompt."""
-        rules = self._constitution.get("rules", [])
+        rules = self._get_constitution_rules()
         formatted = []
         for i, rule in enumerate(rules, 1):
             if not rule.get("enabled", True):
@@ -165,93 +176,9 @@ class Governance:
 
         return chunks
 
-    async def wrap(
-        self,
-        provider: str,
-        call: Callable,
-    ) -> Any:
-        """
-        Wrap an LLM call with constitutional governance.
-
-        Args:
-            provider: LLM provider ('anthropic', 'openai', etc.)
-            call: The LLM call as a callable (lambda or function)
-
-        Returns:
-            The original LLM response (unmodified by governance)
-        """
-        start = time.time()
-        request_id = f"req_{int(start * 1000)}"
-
-        adapter = get_adapter(provider)
-
-        if self.mode == "fire-and-forget":
-            return await self._fire_and_forget(request_id, call)
-
-        response = await asyncio.to_thread(call)
-        text = adapter.extract_text(response)
-        model = adapter.get_model_id(response)
-
-        skip_reason = self._validate_input("", text)
-        if skip_reason:
-            logger.info(f"Skipping evaluation: {skip_reason}")
-            await self._log_evaluation(
-                request_id=request_id,
-                user_prompt="",
-                llm_response=text,
-                model=model,
-                provider=provider,
-                result=EvaluationResult(
-                    compliant=True,
-                    score=1.0,
-                    violations=[],
-                    status="skipped",
-                    constitution_version=self._constitution.get("version", "unknown"),
-                ),
-                latency_ms=int((time.time() - start) * 1000),
-            )
-            return response
-
-        if self.mode == "async":
-            asyncio.create_task(
-                self._evaluate_async(request_id, "", text, model, provider, start)
-            )
-            return response
-
-        result = await self._evaluate_sync("", text, model, provider)
-        await self._log_evaluation(
-            request_id=request_id,
-            user_prompt="",
-            llm_response=text,
-            model=model,
-            provider=provider,
-            result=result,
-            latency_ms=int((time.time() - start) * 1000),
-        )
-        return response
-
-    async def _fire_and_forget(self, request_id: str, call: Callable) -> Any:
-        """Fire-and-forget: just log raw I/O, no evaluation."""
-        response = await asyncio.to_thread(call)
-        adapter = get_adapter("anthropic")
-        text = adapter.extract_text(response)
-        logger.info(f"Fire-and-forget: captured {len(text)} chars, no evaluation")
-        return response
-
-    async def _evaluate_sync(
-        self,
-        user_prompt: str,
-        llm_response: str,
-        model: str,
-        provider: str,
-    ) -> EvaluationResult:
-        """
-        Synchronous evaluation — calls the interpreter and waits for result.
-        For MVP: calls Claude 3.5 Sonnet directly as interpreter.
-        """
-        rules = self._format_constitution_rules()
-
-        interpreter_prompt = f"""SYSTEM: You are a constitutional AI evaluator. Your job is to evaluate LLM outputs against a set of principles. Be precise, fair, and explain your reasoning.
+    def _build_interpreter_prompt(self, rules: str, user_prompt: str, llm_response: str) -> str:
+        """Build the interpreter prompt for a single chunk."""
+        return f"""SYSTEM: You are a constitutional AI evaluator. Your job is to evaluate LLM outputs against a set of principles. Be precise, fair, and explain your reasoning.
 
 USER:
 
@@ -280,14 +207,118 @@ Respond with a JSON object only:
   "notes": "any additional observations"
 }}"""
 
+    async def wrap(
+        self,
+        provider: str,
+        call: Callable,
+        user_prompt: str = "",
+    ) -> Any:
+        """
+        Wrap an LLM call with constitutional governance.
+
+        Args:
+            provider: LLM provider ('anthropic', 'openai', etc.)
+            call: The LLM call as a callable (lambda or function).
+                  Must return an LLMResponse object from the adapter.
+            user_prompt: The original user prompt (for interpreter context).
+                        Defaults to empty string.
+
+        Returns:
+            The original LLM response (unmodified by governance)
+        """
+        start = time.time()
+        request_id = f"req_{int(start * 1000)}"
+
+        adapter = get_adapter(provider)
+
+        if self.mode == "fire-and-forget":
+            return await self._fire_and_forget(request_id, call, adapter)
+
+        response = await asyncio.to_thread(call)
+        text = adapter.extract_text(response)
+        model = adapter.get_model_id(response)
+
+        skip_reason = self._validate_input(text)
+        if skip_reason:
+            logger.info(f"Skipping evaluation: {skip_reason}")
+            await self._log_evaluation(
+                request_id=request_id,
+                user_prompt=user_prompt,
+                llm_response=text,
+                model=model,
+                provider=provider,
+                result=EvaluationResult(
+                    compliant=True,
+                    score=1.0,
+                    violations=[],
+                    status="skipped",
+                    constitution_version=self._get_constitution_version(),
+                ),
+                latency_ms=int((time.time() - start) * 1000),
+            )
+            return response
+
+        if self.mode == "async":
+            task = asyncio.create_task(
+                self._evaluate_async(request_id, user_prompt, text, model, provider, start)
+            )
+            task.add_done_callback(self._handle_task_exception)
+            return response
+
+        result = await self._evaluate_sync(user_prompt, text, model, provider)
+        await self._log_evaluation(
+            request_id=request_id,
+            user_prompt=user_prompt,
+            llm_response=text,
+            model=model,
+            provider=provider,
+            result=result,
+            latency_ms=int((time.time() - start) * 1000),
+        )
+        return response
+
+    def _handle_task_exception(self, task: asyncio.Task) -> None:
+        """Handle unhandled exceptions from background tasks."""
         try:
-            chunks = self._smart_chunk(llm_response)
+            task.result()
+        except Exception as e:
+            logger.exception(f"Background evaluation task failed: {e}")
+
+    async def _fire_and_forget(
+        self,
+        request_id: str,
+        call: Callable,
+        adapter,
+    ) -> Any:
+        """Fire-and-forget: just log raw I/O, no evaluation."""
+        response = await asyncio.to_thread(call)
+        text = adapter.extract_text(response)
+        logger.info(f"Fire-and-forget: captured {len(text)} chars, no evaluation")
+        return response
+
+    async def _evaluate_sync(
+        self,
+        user_prompt: str,
+        llm_response: str,
+        model: str,
+        provider: str,
+    ) -> EvaluationResult:
+        """
+        Synchronous evaluation — calls the interpreter and waits for result.
+        For MVP: calls Claude 3.5 Sonnet directly as interpreter.
+        """
+        rules = self._format_constitution_rules()
+        chunks = self._smart_chunk(llm_response)
+        truncated = len(chunks) > 1
+
+        try:
             all_violations = []
-            truncated = len(chunks) > 1
+            interpreter_adapter = get_adapter("anthropic")
 
             for chunk in chunks:
+                prompt = self._build_interpreter_prompt(rules, user_prompt, chunk)
                 raw = await asyncio.to_thread(
-                    lambda: get_adapter("anthropic")().call(interpreter_prompt.replace(llm_response, chunk))
+                    lambda p=prompt: interpreter_adapter.call(p)
                 )
 
                 result = self._parse_interpreter_response(raw.text)
@@ -300,10 +331,11 @@ Respond with a JSON object only:
                 compliant=not has_violations,
                 score=1.0 if not has_violations else 0.7,
                 violations=all_violations,
-                constitution_version=self._constitution.get("version", "unknown"),
+                constitution_version=self._get_constitution_version(),
                 truncated=truncated,
                 status="success",
             )
+
         except Exception as e:
             logger.error(f"Evaluation failed: {e}")
             return EvaluationResult(
