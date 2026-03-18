@@ -76,14 +76,19 @@ constitutional-governance/
 ├── service/
 │   ├── __init__.py
 │   ├── app.py              # FastAPI governance service
+│   ├── static/
+│   │   └── index.html      # Dashboard UI (Tailwind CDN)
 │   ├── evaluator.py        # Interpreter LLM caller
 │   ├── constitution.py      # Constitution store + versioning
 │   ├── audit.py             # Audit log writer
 │   └── analytics.py         # Violation pattern detection
 ├── tests/
 │   ├── golden_set.json      # Known outputs for consistency checks
-│   ├── test_evaluator.py    # Unit tests for interpreter
+│   ├── __init__.py
 │   ├── test_constitution.py # Constitution loading + validation
+│   ├── test_governance.py   # SDK governance wrapper tests
+│   ├── test_json_parse.py   # JSON parsing robustness tests
+│   ├── test_smart_chunk.py  # Output truncation tests
 │   └── test_integration.py  # End-to-end tests
 └── examples/
     ├── quickstart.py        # Minimal working example
