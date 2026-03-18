@@ -8,7 +8,7 @@
 
 ## Project Overview
 
-This is a greenfield project building a model-agnostic constitutional AI monitoring layer. Any LLM call flows through a wrapper that evaluates the output against a plain-English constitution using a separate LLM (Claude 3.5 Sonnet as interpreter).
+This is a greenfield project building a model-agnostic constitutional AI monitoring layer. Any LLM call flows through a wrapper that evaluates the output against a plain-English constitution using a separate LLM as interpreter.
 
 **Core principle:** Monitoring never blocks. The user's LLM response always returns, regardless of whether evaluation succeeds or fails.
 
@@ -21,7 +21,7 @@ This is a greenfield project building a model-agnostic constitutional AI monitor
 
 ## Interpreter LLM
 
-- **Provider**: Anthropic (Claude 3.5 Sonnet)
+- **Provider**: Anthropic (default: Claude 3.5 Sonnet; configurable via adapter)
 - **Prompt**: Defined in `docs/designs/constitutional-governance.md` Section 5
 - **Prompt versioning**: Store prompts in `constitution/interpreter_prompts/v{N}.md`
 - **Output format**: Structured JSON (see Section 5 for schema)

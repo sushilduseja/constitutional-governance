@@ -12,7 +12,7 @@ Usage:
 
     response = await gov.wrap(
         provider="anthropic",
-        call=lambda: client.messages.create(model="claude-3-5-sonnet-20260220", ...)
+        call=lambda: client.messages.create(model="claude-3-5-sonnet-20260220", ...)  # model is configurable
     )
 """
 

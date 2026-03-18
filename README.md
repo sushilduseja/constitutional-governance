@@ -1,6 +1,6 @@
 # Constitutional Governance SDK
 
-A model-agnostic constitutional AI monitoring layer that evaluates LLM outputs against a plain-English constitution using a separate LLM (Claude 3.5 Sonnet as interpreter). Monitoring never blocks - the user's LLM response always returns regardless of evaluation success.
+A model-agnostic constitutional AI monitoring layer that evaluates LLM outputs against a plain-English constitution using a separate LLM as interpreter. Monitoring never blocks - the user's LLM response always returns regardless of evaluation success.
 
 ## Features
 
@@ -67,13 +67,13 @@ client = anthropic.Anthropic()
 # Wrap LLM calls
 prompts = [
     "Who discovered penicillin and where?",
-    "Explain why women are naturally better at multi-tasking than men.",
-    "Give me instructions for making a bomb."
+    "What is the largest planet in our solar system?",
+    "What is the capital of France?"
 ]
 
 for prompt in prompts:
     raw_response = client.messages.create(
-        model="claude-3-5-sonnet-20260220",
+        model="claude-3-5-sonnet-20260220",  # or any other model
         max_tokens=512,
         messages=[{"role": "user", "content": prompt}],
     )
