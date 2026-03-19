@@ -3,7 +3,7 @@
 > **Status:** Draft v2 (Reviewed)
 > **Author:** Generated with gstack
 > **Date:** 2026-03-18
-> **Stack:** Model-agnostic | Interpreter: Claude 3.5 Sonnet | Constitution: LLM-interpreted, adaptive
+> **Stack:** Model-agnostic | Interpreter: Configurable via adapter (default: Claude 3.5 Sonnet) | Constitution: LLM-interpreted, adaptive
 
 ---
 
@@ -49,7 +49,7 @@ Each rule has:
 
 ### The Interpreter
 
-The interpreter is a **separate LLM call** (Claude 3.5 Sonnet) that evaluates each output against the constitution. It:
+The interpreter is a **separate LLM call** (configurable via adapter, default: Claude 3.5 Sonnet) that evaluates each output against the constitution. It:
 1. Reads the output being evaluated
 2. Reads the constitution rules
 3. Returns a structured evaluation: which rules were violated, severity, explanation
@@ -130,7 +130,7 @@ USER PROMPT ──▶ WRAPPER SDK ──▶ LLM ──▶ LLM RESPONSE
                           │    ┌────────────────┘
                           ▼    ▼
                     INTERPRETER LLM
-                    (Claude 3.5 Sonnet)
+                    (via adapter)
                           │
                           ▼
                     EVALUATION RESULT
@@ -443,7 +443,7 @@ Every evaluation produces an audit record:
   "timestamp": "2026-03-18T14:30:00Z",
   "request_id": "req_xyz789",
   "model_provider": "anthropic",
-  "model_name": "claude-3-5-sonnet-20260220",
+  "model_name": "claude-3-5-sonnet-20260220",  // example - model is configurable
   "constitution_version": "1.0.0",
   "user_prompt": "Explain quantum entanglement to a 10-year-old",
   "llm_response": "Quantum entanglement is when two particles...",
@@ -517,7 +517,7 @@ Set a `MAX_TOKENS_INPUT = 10000` config. If input exceeds this, use smart chunki
 
 ## 8.2. Interpreter Consistency Checker
 
-The interpreter (Claude 3.5 Sonnet) is itself an LLM — its judgments may vary between calls. We need to detect and flag inconsistency.
+The interpreter (configurable LLM) is itself an LLM — its judgments may vary between calls. We need to detect and flag inconsistency.
 
 ### The Problem
 
@@ -625,7 +625,7 @@ gov = Governance(
 
 response = await gov.wrap(
     provider="anthropic",
-    call=lambda: client.messages.create(model="claude-3-5-sonnet-20260220", ...)
+    call=lambda: client.messages.create(model="claude-3-5-sonnet-20260220", ...)  // configurable
 )
 
 # Response is the ORIGINAL LLM response (unmodified)
@@ -663,7 +663,7 @@ The wrapper captures the raw prompt and response — provider-specific translati
 |-------|-----------|-----------|
 | **Wrapper SDK** | Python | Widest LLM library support, easy to integrate |
 | **Governance Service** | Python + FastAPI | Fast to build, async-native |
-| **Interpreter LLM** | Claude 3.5 Sonnet (via SDK) | Strong reasoning, fast, cost-effective |
+| **Interpreter LLM** | Configurable (default: Claude 3.5 Sonnet) | Strong reasoning, fast, cost-effective |
 | **Constitution Store** | JSON files (git-versioned) | Zero infra, full history |
 | **Audit Log** | SQLite | Simple, portable, sufficient for MVP |
 | **Analytics** | Python scripts + basic dashboards | MVP: pandas + matplotlib |
@@ -733,7 +733,7 @@ The wrapper captures the raw prompt and response — provider-specific translati
 - [ ] Wrapper SDK for Python (Anthropic + OpenAI adapters)
 - [ ] Governance service with FastAPI
 - [ ] Constitution store (JSON, git-versioned)
-- [ ] Interpreter: Claude 3.5 Sonnet evaluation
+- [ ] Interpreter: Configurable LLM evaluation (default: Claude 3.5 Sonnet)
 - [ ] Audit log (SQLite)
 - [ ] Async evaluation (non-blocking)
 - [ ] Basic analytics (violations by rule, compliance trend)

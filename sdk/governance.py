@@ -297,7 +297,7 @@ Respond with a JSON object only:
     ) -> EvaluationResult:
         """
         Synchronous evaluation — calls the interpreter and waits for result.
-        For MVP: calls Claude 3.5 Sonnet directly as interpreter.
+        For MVP: calls interpreter LLM via anthropic adapter (default: Claude 3.5 Sonnet).
         """
         rules = self._format_constitution_rules()
         chunks = self._smart_chunk(llm_response)

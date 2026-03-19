@@ -12,11 +12,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Model-agnostic Python SDK with adapter pattern (Anthropic + OpenAI)
 - Governance service scaffold (FastAPI)
 - Default constitution (5 rules, LLM-interpreted)
-- Interpreter prompt v1 (Claude 3.5 Sonnet)
+- Interpreter prompt v1 (configurable interpreter, default: Claude 3.5 Sonnet)
 - Golden set consistency checker (8 test cases)
 - Audit log schema + evaluation state machine
 - Smart output truncation strategy (paragraph-boundary chunking)
 - Project governance docs (CLAUDE.md, TODOS.md)
+- Governance dashboard UI (single-page, Tailwind CDN, dark theme)
+- API endpoints: GET /api/stats, GET /api/constitution, GET /api/audit-log
+- Pytest test suite: constitution, governance, JSON parsing, smart chunking
 
 ### Fixed
 

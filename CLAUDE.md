@@ -8,7 +8,7 @@
 
 ## Project Overview
 
-This is a greenfield project building a model-agnostic constitutional AI monitoring layer. Any LLM call flows through a wrapper that evaluates the output against a plain-English constitution using a separate LLM (Claude 3.5 Sonnet as interpreter).
+This is a greenfield project building a model-agnostic constitutional AI monitoring layer. Any LLM call flows through a wrapper that evaluates the output against a plain-English constitution using a separate LLM as interpreter.
 
 **Core principle:** Monitoring never blocks. The user's LLM response always returns, regardless of whether evaluation succeeds or fails.
 
@@ -21,7 +21,7 @@ This is a greenfield project building a model-agnostic constitutional AI monitor
 
 ## Interpreter LLM
 
-- **Provider**: Anthropic (Claude 3.5 Sonnet)
+- **Provider**: Anthropic (default: Claude 3.5 Sonnet; configurable via adapter)
 - **Prompt**: Defined in `docs/designs/constitutional-governance.md` Section 5
 - **Prompt versioning**: Store prompts in `constitution/interpreter_prompts/v{N}.md`
 - **Output format**: Structured JSON (see Section 5 for schema)
@@ -76,14 +76,19 @@ constitutional-governance/
 ├── service/
 │   ├── __init__.py
 │   ├── app.py              # FastAPI governance service
+│   ├── static/
+│   │   └── index.html      # Dashboard UI (Tailwind CDN)
 │   ├── evaluator.py        # Interpreter LLM caller
 │   ├── constitution.py      # Constitution store + versioning
 │   ├── audit.py             # Audit log writer
 │   └── analytics.py         # Violation pattern detection
 ├── tests/
 │   ├── golden_set.json      # Known outputs for consistency checks
-│   ├── test_evaluator.py    # Unit tests for interpreter
+│   ├── __init__.py
 │   ├── test_constitution.py # Constitution loading + validation
+│   ├── test_governance.py   # SDK governance wrapper tests
+│   ├── test_json_parse.py   # JSON parsing robustness tests
+│   ├── test_smart_chunk.py  # Output truncation tests
 │   └── test_integration.py  # End-to-end tests
 └── examples/
     ├── quickstart.py        # Minimal working example
