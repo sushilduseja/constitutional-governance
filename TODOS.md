@@ -11,15 +11,15 @@
 - [x] ~~**Token estimation utility**~~ — Done. `_estimate_tokens()` uses char approximation.
 - [x] ~~**Interpreter JSON parsing robustness**~~ — Done. `_parse_interpreter_response()` handles clean JSON, markdown-wrapped, and repair attempts.
 - [x] ~~**Auth error handling**~~ — Done. `_handle_evaluation_error()` distinguishes Auth/RateLimit/Timeout/Generic.
+- [x] ~~**Constitution schema validation**~~ — Done. `service/constitution.py` validates rules on load, rejects invalid severity/required fields.
+- [x] ~~**SQLite audit log writer**~~ — Done. `service/audit.py` implements append-only SQLite with WAL mode, thread-safe writes.
+- [x] ~~**Groq adapter**~~ — Done. `sdk/adapters/groq.py` uses Groq free tier as interpreter LLM.
+- [x] ~~**Evaluator orchestration**~~ — Done. `service/evaluator.py` wires constitution + Groq + audit.
+- [x] ~~**Analytics engine**~~ — Done. `service/analytics.py` aggregates violations, trends, failure stats.
+- [x] ~~**Service app wiring**~~ — Done. `service/app.py` connects all components via FastAPI endpoints.
 
 - [ ] **Startup validation health check** — On Governance SDK initialization, run a health check: can it load the constitution? Log WARN if constitution is empty. Don't fail silently.
   Priority: P1 | Depends on: None | Filed by: plan review
-
-- [ ] **Constitution schema validation** — On load, validate the constitution JSON schema. Reject constitutions missing required fields (`id`, `text`, `severity`, `enabled`). Log which rules are invalid.
-  Priority: P1 | Depends on: None | Filed by: plan review
-
-- [ ] **SQLite audit log writer** — Currently `_log_evaluation()` only logs via `logging.info()`. Implement actual SQLite writes to the audit log.
-  Priority: P1 | Depends on: Architecture doc | Filed by: pre-landing review
 
 - [ ] **Golden set consistency checker** — Implement the consistency check job that re-evaluates golden set outputs against current constitution and alerts on drift.
   Priority: P1 | Depends on: Interpreter, constitution | Filed by: plan review

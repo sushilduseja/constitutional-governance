@@ -4,10 +4,12 @@ SDK adapters for different LLM providers.
 
 from sdk.adapters.base import LLMAdapter, LLMResponse
 from sdk.adapters.anthropic import AnthropicAdapter
+from sdk.adapters.groq_adapter import GroqAdapter
 from sdk.adapters.openai import OpenAIAdapter
 
 ADAPTERS = {
     "anthropic": AnthropicAdapter,
+    "groq": GroqAdapter,
     "openai": OpenAIAdapter,
 }
 

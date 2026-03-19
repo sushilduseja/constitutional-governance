@@ -72,9 +72,9 @@ class TestSmartChunking:
             assert found, f"Paragraph '{para}' not found in any chunk"
 
     def test_single_paragraph_too_long_splits_at_sentence(self):
-        """Single paragraph exceeding limit is split."""
+        """Single paragraph exceeding limit is split at sentence boundaries."""
         gov = Governance(max_tokens_per_chunk=100)
-        text = ("This is a long sentence. " * 10).strip()
+        text = ("This is a long sentence. " * 50).strip()
         chunks = gov._smart_chunk(text)
 
         # Should split into multiple chunks

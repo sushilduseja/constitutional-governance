@@ -7,6 +7,7 @@ Wraps LLM calls with constitutional AI monitoring.
 import asyncio
 import json
 import logging
+import re
 import time
 from typing import Any, Literal, Optional
 
@@ -83,6 +84,7 @@ class Governance:
         self.max_tokens_per_chunk = max_tokens_per_chunk
 
         self._constitution: Optional[dict] = None
+        self._background_tasks: list[asyncio.Task] = []
         self._load_constitution()
 
     def _load_constitution(self) -> None:
@@ -161,6 +163,8 @@ class Governance:
 
         current_chunk = ""
         for para in paragraphs:
+            if not para.strip():
+                continue
             para_tokens = self._estimate_tokens(para)
             chunk_tokens = self._estimate_tokens(current_chunk)
 
@@ -169,7 +173,23 @@ class Governance:
             else:
                 if current_chunk:
                     chunks.append(current_chunk.strip())
-                current_chunk = para
+                if self._estimate_tokens(para) <= self.max_tokens_per_chunk:
+                    current_chunk = para
+                else:
+                    sentences = re.split(r"(?<=[.!?])\s+", para)
+                    current_chunk = ""
+                    for sentence in sentences:
+                        sent_tokens = self._estimate_tokens(sentence)
+                        chunk_tokens = self._estimate_tokens(current_chunk)
+                        if chunk_tokens + sent_tokens <= self.max_tokens_per_chunk:
+                            current_chunk += (" " if current_chunk else "") + sentence
+                        else:
+                            if current_chunk:
+                                chunks.append(current_chunk.strip())
+                            current_chunk = sentence
+                    if current_chunk:
+                        chunks.append(current_chunk.strip())
+                        current_chunk = ""
 
         if current_chunk.strip():
             chunks.append(current_chunk.strip())
@@ -178,6 +198,15 @@ class Governance:
             logger.warning(f"Output split into {len(chunks)} chunks — consider increasing max_tokens_per_chunk")
 
         return chunks
+
+    def _sanitize_llm_response(self, text: str) -> str:
+        """Sanitize LLM output before injecting into interpreter prompt. Prevents prompt injection."""
+        MAX_CHARS = 128 * 1024
+        if len(text) > MAX_CHARS:
+            text = text[:MAX_CHARS]
+            logger.warning(f"LLM response truncated to {MAX_CHARS} chars for evaluation")
+        escaped = text.replace("\r", "").replace("\x00", "")
+        return f"\n[--- LLM OUTPUT TO EVALUATE (begin) ---]\n{escaped}\n[--- LLM OUTPUT TO EVALUATE (end) ---]\n"
 
     def _build_interpreter_prompt(self, rules: str, user_prompt: str, llm_response: str) -> str:
         """Build the interpreter prompt for a single chunk."""
@@ -192,7 +221,7 @@ INPUT PROMPT (what was asked):
 {user_prompt or '[not provided]'}
 
 OUTPUT TO EVALUATE:
-{llm_response}
+{self._sanitize_llm_response(llm_response)}
 
 Respond with a JSON object only:
 {{
@@ -264,9 +293,14 @@ Respond with a JSON object only:
             return raw_response
 
         if self.mode == "async":
-            asyncio.create_task(
+            task = asyncio.create_task(
                 self._evaluate_async(request_id, user_prompt, text, model, provider, start)
-            ).add_done_callback(self._handle_task_exception)
+            )
+            task.add_done_callback(self._handle_task_exception)
+            self._background_tasks.append(task)
+            if len(self._background_tasks) > 100:
+                self._background_tasks = self._background_tasks[-50:]
+                logger.warning(f"Background task queue pruned: {len(self._background_tasks)} tasks remain")
             return raw_response
 
         result = self._evaluate_sync(user_prompt, text, model, provider)
@@ -285,8 +319,14 @@ Respond with a JSON object only:
         """Handle unhandled exceptions from background tasks."""
         try:
             task.result()
+        except asyncio.CancelledError:
+            logger.info("Background evaluation task cancelled")
         except Exception as e:
-            logger.exception(f"Background evaluation task failed: {e}")
+            error_type = type(e).__name__
+            if "auth" in str(e).lower() or "401" in str(e) or "403" in str(e):
+                logger.critical(f"BACKGROUND EVALUATION FAILED (auth): {e}")
+            else:
+                logger.warning(f"Background evaluation task failed: {e} ({error_type})")
 
     def _evaluate_sync(
         self,

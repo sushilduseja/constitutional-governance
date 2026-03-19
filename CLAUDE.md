@@ -21,7 +21,10 @@ This is a greenfield project building a model-agnostic constitutional AI monitor
 
 ## Interpreter LLM
 
-- **Provider**: Anthropic (default: Claude 3.5 Sonnet; configurable via adapter)
+- **Provider**: Groq (free tier, OpenAI-compatible) with fallback models
+- **Models (in order)**: `llama-3.3-70b-versatile` → `qwen/qwen3-32b` → `groq/compound-mini` → `llama-3.1-8b-instant`
+- **API Key**: Loaded from `GROQ_API_KEY` environment variable (see `.env.example`)
+- **Retry behavior**: On rate limit/unavailable/timeout, tries next model with 2s delay
 - **Prompt**: Defined in `docs/designs/constitutional-governance.md` Section 5
 - **Prompt versioning**: Store prompts in `constitution/interpreter_prompts/v{N}.md`
 - **Output format**: Structured JSON (see Section 5 for schema)
@@ -38,7 +41,7 @@ This is a greenfield project building a model-agnostic constitutional AI monitor
 
 ## SDK Design
 
-- **Language**: Python (MVP), adapters for Anthropic + OpenAI
+- **Language**: Python (MVP), adapters for Anthropic + OpenAI + Groq
 - **Wrapper interface**: `Governance.wrap(provider, call_lambda) -> response`
 - **Adapter pattern**: Each LLM provider has an adapter implementing `LLMAdapter` protocol
 - **Modes**: sync / async / fire-and-forget. Default: async.
@@ -71,8 +74,8 @@ constitutional-governance/
 │   │   ├── __init__.py
 │   │   ├── base.py         # LLMAdapter protocol
 │   │   ├── anthropic.py    # Anthropic/Claude adapter
-│   │   └── openai.py       # OpenAI/GPT adapter
-│   └── models.py           # Pydantic models for evaluation
+│   │   ├── openai.py       # OpenAI/GPT adapter
+│   │   └── groq_adapter.py # Groq adapter (uses Groq free tier)
 ├── service/
 │   ├── __init__.py
 │   ├── app.py              # FastAPI governance service
@@ -111,3 +114,11 @@ If modifying the interpreter prompt or constitution format:
 3. **Version everything** — Constitution changes, interpreter prompts, SDK versions
 4. **Test the interpreter** — Run golden set consistency check before every significant change
 5. **No PII in audit logs** — Unless PII logging is explicitly enabled with consent
+
+## Setup
+
+1. Copy `.env.example` to `.env`
+2. Add your Groq API key: `GROQ_API_KEY=your_key_here`
+3. Get a free Groq API key at: https://console.groq.com/keys
+4. Run: `uvicorn service.app:app --reload`
+5. Access dashboard at: http://localhost:8000

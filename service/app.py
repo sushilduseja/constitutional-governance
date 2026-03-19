@@ -11,9 +11,13 @@ from fastapi.responses import RedirectResponse
 from pydantic import BaseModel
 from typing import Optional
 from pathlib import Path
-from datetime import datetime
-import random
+import asyncio
 import logging
+
+from service.constitution import ConstitutionStore
+from service.audit import AuditStore
+from service.evaluator import Evaluator
+from service.analytics import Analytics
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -22,6 +26,18 @@ app = FastAPI(title="AI Governance Service", version="0.1.0")
 
 BASE_DIR = Path(__file__).resolve().parent
 STATIC_DIR = BASE_DIR / "static"
+
+CONSTITUTION_PATH = BASE_DIR.parent / "constitution" / "rules" / "default_v1.json"
+AUDIT_DB_PATH = BASE_DIR.parent / "audit.db"
+
+constitution_store = ConstitutionStore(str(CONSTITUTION_PATH))
+audit_store = AuditStore(str(AUDIT_DB_PATH))
+evaluator = Evaluator(
+    constitution_path=str(CONSTITUTION_PATH),
+    audit_db_path=str(AUDIT_DB_PATH),
+    interpreter_provider="groq",
+)
+analytics = Analytics(audit_store)
 
 if STATIC_DIR.exists():
     app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
@@ -41,40 +57,7 @@ class EvaluateResponse(BaseModel):
     compliant: bool
     score: float
     violations: list
-
-
-MOCK_MODELS = ["claude-3-5-sonnet", "gpt-4-turbo", "gpt-4o", "gemini-pro"]
-
-
-def generate_mock_audit_log(count: int = 20):
-    entries = []
-    base_time = datetime.utcnow()
-    for i in range(count):
-        ts = base_time.replace(second=0, microsecond=0)
-        ts = ts.replace(minute=ts.minute - i)
-        compliant = random.random() > 0.15
-        violations_count = 0 if compliant else random.randint(1, 4)
-        entries.append({
-            "id": f"eval_{1000 + count - i}",
-            "timestamp": ts.isoformat() + "Z",
-            "model_name": random.choice(MOCK_MODELS),
-            "compliant": compliant,
-            "score": round(random.uniform(0.4, 1.0), 2) if compliant else round(random.uniform(0.3, 0.7), 2),
-            "violations": violations_count
-        })
-    return entries
-
-
-def generate_mock_stats():
-    return {
-        "total_evaluations": random.randint(1200, 1300),
-        "compliance_rate": round(random.uniform(93.0, 95.5), 1),
-        "active_violations": random.randint(60, 85),
-        "constitution_version": "1.0.0"
-    }
-
-
-MOCK_AUDIT_LOG = generate_mock_audit_log(20)
+    constitution_version: str
 
 
 @app.get("/")
@@ -84,37 +67,89 @@ async def root():
 
 @app.get("/health")
 async def health():
-    return {"status": "ok"}
+    return {
+        "status": "ok",
+        "service": "governance",
+        "constitution_version": constitution_store.get_version(),
+        "rules_count": len(constitution_store.get_rules()),
+    }
 
 
 @app.get("/api/stats")
 async def get_stats():
-    return generate_mock_stats()
+    return analytics.get_stats()
+
+
+@app.get("/api/analytics")
+async def get_analytics():
+    return analytics.get_full_report()
 
 
 @app.get("/api/constitution")
 async def get_constitution(version: Optional[str] = None):
-    constitution_path = BASE_DIR.parent / "constitution" / "rules" / "default_v1.json"
-    if constitution_path.exists():
-        import json
-        with open(constitution_path, "r") as f:
-            return json.load(f)
-    raise HTTPException(status_code=404, detail="Constitution not found")
+    constitution_store.reload()
+    return constitution_store.to_dict()
+
+
+@app.get("/api/constitution/rules")
+async def get_constitution_rules():
+    return {
+        "version": constitution_store.get_version(),
+        "rules": constitution_store.get_rules(),
+    }
 
 
 @app.get("/api/audit-log")
-async def get_audit_log(limit: int = 50):
-    global MOCK_AUDIT_LOG
-    return MOCK_AUDIT_LOG[:limit]
+async def get_audit_log(limit: int = 50, offset: int = 0):
+    return audit_store.query(limit=limit, offset=offset)
+
+
+@app.get("/api/audit-log/count")
+async def get_audit_count():
+    total = audit_store.count()
+    compliant = audit_store.count(compliant=True)
+    failed = audit_store.count(compliant=False)
+    return {
+        "total": total,
+        "compliant": compliant,
+        "non_compliant": failed,
+    }
 
 
 @app.post("/api/audit-log/refresh")
 async def refresh_audit_log():
-    global MOCK_AUDIT_LOG
-    MOCK_AUDIT_LOG = generate_mock_audit_log(20)
-    return {"status": "refreshed", "count": len(MOCK_AUDIT_LOG)}
+    records = audit_store.query(limit=100)
+    return {"status": "ok", "count": len(records)}
 
 
 @app.post("/evaluate", response_model=EvaluateResponse)
 async def evaluate(req: EvaluateRequest):
-    raise HTTPException(status_code=501, detail="Not yet implemented")
+    try:
+        result = await asyncio.to_thread(
+            evaluator.evaluate,
+            user_prompt=req.user_prompt,
+            llm_response=req.llm_response,
+            model_provider=req.model_provider,
+            model_name=req.model_name,
+        )
+        return EvaluateResponse(
+            eval_id=f"eval_{id(result)}",
+            status=result.status,
+            compliant=result.compliant,
+            score=result.score,
+            violations=result.violations,
+            constitution_version=result.constitution_version,
+        )
+    except Exception as e:
+        logger.error(f"Evaluation failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/constitution/reload")
+async def reload_constitution():
+    constitution_store.reload()
+    return {
+        "status": "reloaded",
+        "version": constitution_store.get_version(),
+        "rules_count": len(constitution_store.get_rules()),
+    }
