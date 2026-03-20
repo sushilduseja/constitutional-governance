@@ -8,7 +8,7 @@ A model-agnostic constitutional AI monitoring layer that evaluates LLM outputs a
 - **Non-blocking monitoring**: Even if interpreter LLM fails, user response still returns
 - **Constitution versioning**: Every constitution change is a version; evaluations tagged with version used
 - **No PII by default**: Logs only evaluation metadata unless PII logging explicitly enabled
-- **Multi-provider support**: Anthropic (Claude) + OpenAI (GPT) adapters
+- **Multi-provider support**: Groq (default, free tier), Anthropic (Claude), OpenAI (GPT) adapters
 - **Smart output truncation**: Paragraph-boundary chunking for long outputs (>8K tokens)
 - **Golden set consistency checking**: Validate interpreter consistency over time
 - **Audit log**: SQLite (MVP), PostgreSQL (production) with append-only schema
@@ -110,12 +110,12 @@ The dashboard shows:
 - `GET /api/stats` → Dashboard statistics
 - `GET /api/constitution` → Current constitution rules
 - `GET /api/audit-log` → Audit log entries (with optional `limit` parameter)
-- `POST /api/audit-log/refresh` → Refresh mock audit data
-- `POST /evaluate` → Evaluate LLM response against constitution (not yet implemented)
+- `POST /api/audit-log/refresh` → Refresh audit log cache
+- `POST /evaluate` → Evaluate LLM response against constitution
 
 ## Configuration
 
-See `docs/designs/ai-governance-mvp.md` for full architecture details.
+See `docs/designs/constitutional-governance.md` for full architecture details.
 
 ### Constitution Format
 JSON files in `constitution/rules/` directory:

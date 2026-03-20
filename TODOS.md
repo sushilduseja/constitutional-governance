@@ -1,6 +1,6 @@
 # TODOS — AI Governance MVP
 
-> Last updated: 2026-03-18
+> Last updated: 2026-03-20
 > Status: Active
 
 ---
@@ -12,24 +12,23 @@
 - [x] ~~**Interpreter JSON parsing robustness**~~ — Done. `_parse_interpreter_response()` handles clean JSON, markdown-wrapped, and repair attempts.
 - [x] ~~**Auth error handling**~~ — Done. `_handle_evaluation_error()` distinguishes Auth/RateLimit/Timeout/Generic.
 - [x] ~~**Constitution schema validation**~~ — Done. `service/constitution.py` validates rules on load, rejects invalid severity/required fields.
-- [x] ~~**SQLite audit log writer**~~ — Done. `service/audit.py` implements append-only SQLite with WAL mode, thread-safe writes.
-- [x] ~~**Groq adapter**~~ — Done. `sdk/adapters/groq.py` uses Groq free tier as interpreter LLM.
+- [x] ~~**SQLite audit log writer**~~ — Done. `service/audit.py` implements append-only SQLite with WAL mode, thread-safe writes, 3x retry with backoff.
+- [x] ~~**Groq adapter**~~ — Done. `sdk/adapters/groq_adapter.py` uses Groq free tier as interpreter LLM with model fallbacks.
 - [x] ~~**Evaluator orchestration**~~ — Done. `service/evaluator.py` wires constitution + Groq + audit.
 - [x] ~~**Analytics engine**~~ — Done. `service/analytics.py` aggregates violations, trends, failure stats.
 - [x] ~~**Service app wiring**~~ — Done. `service/app.py` connects all components via FastAPI endpoints.
-
-- [ ] **Startup validation health check** — On Governance SDK initialization, run a health check: can it load the constitution? Log WARN if constitution is empty. Don't fail silently.
-  Priority: P1 | Depends on: None | Filed by: plan review
-
-- [ ] **Golden set consistency checker** — Implement the consistency check job that re-evaluates golden set outputs against current constitution and alerts on drift.
-  Priority: P1 | Depends on: Interpreter, constitution | Filed by: plan review
-
-- [ ] **Startup validation: SDK health check** — Check API key is valid by making a lightweight call. Log WARN if auth fails on startup rather than on first use.
-  Priority: P2 | Depends on: Phase 1 core | Filed by: plan review
+- [x] ~~**Interpreter prompt versioning**~~ — Done. `service/constitution.py` loads prompts from `constitution/interpreter_prompts/v{N}.md`. Evaluations tagged with prompt version.
+- [x] ~~**Prompt injection protection**~~ — Done. LLM output wrapped in `[--- LLM OUTPUT TO EVALUATE ---]` fence blocks before interpolation into interpreter prompt.
+- [x] ~~**Audit failure propagation**~~ — Done. `AuditWriteError` raised after 3 retries, propagated to evaluator.
+- [x] ~~**Async task tracking**~~ — Done. `Governance` tracks `_background_tasks` list, CRITICAL log on auth failures.
+- [x] ~~**Input length validation**~~ — Done. 128KB cap before sanitization, 64KB cap in audit store.
 
 ---
 
 ## Phase 2: Analytics + Self-Improvement
+
+- [ ] **Golden set consistency checker** — Implement the consistency check job that re-evaluates golden set outputs against current constitution and alerts on drift.
+  Priority: P1 | Depends on: Interpreter, constitution | Filed by: plan review
 
 - [ ] **Constitution health scanner** — Analyze audit log weekly to identify: (1) rules with 0 violations (possibly too broad), (2) rules with >50% violation rate (possibly too narrow), (3) violation patterns with no corresponding rule. Output: ranked suggestions.
   Priority: P2 | Depends on: Phase 1 complete, audit log populated | Filed by: plan review
@@ -60,9 +59,6 @@
 
 ## Cross-Cutting (Anytime)
 
-- [ ] **Interpreter prompt versioning** — The interpreter prompt changes evaluation behavior. Store prompts in `constitution/interpreter_prompts/v{N}.md`. Tag evaluations with interpreter prompt version.
-  Priority: P1 | Depends on: None | Filed by: plan review
-
 - [ ] **Cost tracking** — Track interpreter LLM token usage and cost separately. Store: `interpreter_tokens_in`, `interpreter_tokens_out`, `interpreter_cost_usd`.
   Priority: P2 | Depends on: Token estimation | Filed by: plan review
 
@@ -71,9 +67,6 @@
 
 - [ ] **Shadow mode for new rules** — Test proposed rules against past 100 evaluations in shadow mode before activating. Log what would have happened without counting violations.
   Priority: P3 | Depends on: Phase 2 self-improvement | Filed by: plan review
-
-- [ ] **Async retry with backoff** — Current `_evaluate_sync` doesn't retry. Add exponential backoff retry (2s, 4s) for timeout and rate limit errors.
-  Priority: P1 | Depends on: Auth error handling | Filed by: pre-landing review
 
 ---
 

@@ -91,11 +91,9 @@ constitutional-governance/
 │   ├── test_constitution.py # Constitution loading + validation
 │   ├── test_governance.py   # SDK governance wrapper tests
 │   ├── test_json_parse.py   # JSON parsing robustness tests
-│   ├── test_smart_chunk.py  # Output truncation tests
-│   └── test_integration.py  # End-to-end tests
+│   └── test_smart_chunk.py  # Output truncation tests
 └── examples/
-    ├── quickstart.py        # Minimal working example
-    └── demo.py              # Interactive demo
+    └── quickstart.py        # Minimal working example
 ```
 
 ## Prompt/LLM Changes
