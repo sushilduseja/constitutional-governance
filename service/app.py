@@ -22,7 +22,7 @@ load_dotenv(Path(__file__).resolve().parent.parent / ".env")
 from service.constitution import ConstitutionStore
 from service.audit import AuditStore
 from service.evaluator import Evaluator
-from service.analytics import Analytics
+from service.analytics import Analytics, GoldenSetChecker
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -190,3 +190,17 @@ async def reload_constitution():
         "version": constitution_store.get_version(),
         "rules_count": len(constitution_store.get_rules()),
     }
+
+
+@app.get("/api/golden-check")
+async def golden_set_check(verbose: bool = False):
+    """
+    Run the golden set consistency checker.
+
+    Compares current interpreter behavior against known-correct golden
+    set outputs. Use after interpreter prompt or constitution changes.
+    """
+    BASE_DIR_PATH = Path(__file__).resolve().parent
+    golden_path = BASE_DIR_PATH.parent / "tests" / "golden_set.json"
+    checker = GoldenSetChecker(evaluator, str(golden_path))
+    return await asyncio.to_thread(checker.check, verbose=verbose)

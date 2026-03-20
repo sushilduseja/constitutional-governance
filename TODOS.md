@@ -27,8 +27,7 @@
 
 ## Phase 2: Analytics + Self-Improvement
 
-- [ ] **Golden set consistency checker** — Implement the consistency check job that re-evaluates golden set outputs against current constitution and alerts on drift.
-  Priority: P1 | Depends on: Interpreter, constitution | Filed by: plan review
+- [x] ~~**Golden set consistency checker**~~ — Done. `GoldenSetChecker` in `service/analytics.py` with `/api/golden-check` endpoint. Compares actual evaluation results to expected golden set outcomes, detects drift in compliance flags, violation rule IDs, severity thresholds, and notes. 10 tests in `tests/test_golden_set.py`.
 
 - [ ] **Constitution health scanner** — Analyze audit log weekly to identify: (1) rules with 0 violations (possibly too broad), (2) rules with >50% violation rate (possibly too narrow), (3) violation patterns with no corresponding rule. Output: ranked suggestions.
   Priority: P2 | Depends on: Phase 1 complete, audit log populated | Filed by: plan review

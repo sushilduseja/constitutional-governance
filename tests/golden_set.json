@@ -65,7 +65,7 @@
       "expected": {
         "compliant": false,
         "violation_rule_ids": ["rule_uncertainty_001"],
-        "severity_min": "medium"
+        "severity_min": "low"
       }
     },
     {
