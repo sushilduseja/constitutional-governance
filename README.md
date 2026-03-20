@@ -69,7 +69,7 @@ from sdk.governance import Governance
 gov = Governance(mode="async")
 
 raw_response = anthropic_client.messages.create(
-    model="claude-3-5-sonnet",
+    model="governance-alpha-7b",
     messages=[{"role": "user", "content": "What is the SEC's regulation for crypto?"}]
 )
 
@@ -91,9 +91,7 @@ curl -X POST http://localhost:8000/evaluate \
   -H "Content-Type: application/json" \
   -d '{
     "user_prompt": "What is your refund policy?",
-    "llm_response": "You can return items within 30 days for a full refund.",
-    "model_provider": "anthropic",
-    "model_name": "claude-3-5-sonnet"
+    "context": "You are a customer support bot for an online retailer."
   }'
 ```
 
@@ -105,11 +103,14 @@ curl -X POST http://localhost:8000/evaluate \
 |--------|------|-------------|
 | `GET` | `/` | Dashboard |
 | `GET` | `/health` | Health check |
+| `GET` | `/api/config` | Service configuration |
 | `GET` | `/api/stats` | Compliance statistics |
 | `GET` | `/api/constitution` | Current constitution rules |
 | `GET` | `/api/audit-log` | Evaluation records |
 | `GET` | `/api/analytics` | Full analytics report |
-| `POST` | `/evaluate` | Evaluate a response |
+| `POST` | `/evaluate` | Service calls LLM, evaluates response |
+| `POST` | `/api/direct-evaluate` | Evaluate a pre-written response |
+| `GET` | `/api/golden-check` | Run golden set consistency check |
 
 ---
 

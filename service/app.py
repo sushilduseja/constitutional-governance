@@ -83,23 +83,23 @@ if STATIC_DIR.exists():
 import os
 
 MONITORED_PROVIDER = os.environ.get("MONITORED_PROVIDER", "anthropic").lower()
-MONITORED_MODEL = os.environ.get("MONITORED_MODEL", "claude-3-5-sonnet-20241022")
+MONITORED_MODEL = os.environ.get("MONITORED_MODEL", "governance-alpha-7b")
 
 PROVIDER_MODELS = {
     "anthropic": [
-        {"id": "claude-sonnet-4-20250514", "label": "Claude Sonnet 4"},
-        {"id": "claude-3-5-sonnet-20241022", "label": "Claude 3.5 Sonnet"},
-        {"id": "claude-3-5-haiku-20241022", "label": "Claude 3.5 Haiku"},
-        {"id": "claude-3-opus-20240229", "label": "Claude 3 Opus"},
-        {"id": "claude-3-haiku-20240307", "label": "Claude 3 Haiku"},
+        {"id": "governance-alpha-7b", "label": "Governance Alpha 7B"},
+        {"id": "governance-alpha-3b", "label": "Governance Alpha 3B"},
+        {"id": "sentinel-large-v2", "label": "Sentinel Large v2"},
+        {"id": "sentinel-small-v2", "label": "Sentinel Small v2"},
+        {"id": "guardian-pro-13b", "label": "Guardian Pro 13B"},
     ],
     "openai": [
-        {"id": "gpt-4o", "label": "GPT-4o"},
-        {"id": "gpt-4o-mini", "label": "GPT-4o Mini"},
-        {"id": "gpt-4-turbo", "label": "GPT-4 Turbo"},
-        {"id": "gpt-4", "label": "GPT-4"},
-        {"id": "o1", "label": "OpenAI o1"},
-        {"id": "o3-mini", "label": "o3 Mini"},
+        {"id": "harmony-gpt-4", "label": "Harmony GPT-4"},
+        {"id": "harmony-gpt-4-mini", "label": "Harmony GPT-4 Mini"},
+        {"id": "harmony-gpt-3.5", "label": "Harmony GPT-3.5"},
+        {"id": "compass-4o", "label": "Compass 4o"},
+        {"id": "compass-o1", "label": "Compass o1"},
+        {"id": "compass-o3", "label": "Compass o3"},
     ],
     "groq": [
         {"id": "llama-3.3-70b-versatile", "label": "Llama 3.3 70B"},
