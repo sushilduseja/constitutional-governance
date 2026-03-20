@@ -5,14 +5,16 @@ Run:
     uvicorn service.app:app --reload
 """
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import RedirectResponse
-from pydantic import BaseModel
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel, Field
 from typing import Optional
 from pathlib import Path
 from dotenv import load_dotenv
 import asyncio
+import time
 import logging
 
 load_dotenv(Path(__file__).resolve().parent.parent / ".env")
@@ -25,7 +27,34 @@ from service.analytics import Analytics
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-app = FastAPI(title="AI Governance Service", version="0.1.0")
+app = FastAPI(
+    title="AI Governance Service",
+    version="0.1.0",
+    description="Constitutional AI monitoring layer for LLM applications",
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["GET", "POST"],
+    allow_headers=["*"],
+)
+
+EVALUATE_RATE_LIMIT = 10
+_evaluate_timestamps: list[float] = []
+
+
+def _check_rate_limit() -> None:
+    now = time.time()
+    global _evaluate_timestamps
+    _evaluate_timestamps = [t for t in _evaluate_timestamps if now - t < 60]
+    if len(_evaluate_timestamps) >= EVALUATE_RATE_LIMIT:
+        raise HTTPException(
+            status_code=429,
+            detail=f"Rate limit exceeded: max {EVALUATE_RATE_LIMIT} evaluations per minute"
+        )
+    _evaluate_timestamps.append(now)
 
 BASE_DIR = Path(__file__).resolve().parent
 STATIC_DIR = BASE_DIR / "static"
@@ -46,11 +75,15 @@ if STATIC_DIR.exists():
     app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
 
+MAX_PROMPT_CHARS = 8000
+MAX_RESPONSE_CHARS = 32000
+
+
 class EvaluateRequest(BaseModel):
-    user_prompt: str
-    llm_response: str
-    model_provider: str
-    model_name: str
+    user_prompt: str = Field(..., max_length=MAX_PROMPT_CHARS)
+    llm_response: str = Field(..., max_length=MAX_RESPONSE_CHARS)
+    model_provider: str = Field(..., max_length=50)
+    model_name: str = Field(..., max_length=100)
     constitution_version: Optional[str] = "latest"
 
 
@@ -127,6 +160,7 @@ async def refresh_audit_log():
 
 @app.post("/evaluate", response_model=EvaluateResponse)
 async def evaluate(req: EvaluateRequest):
+    _check_rate_limit()
     try:
         result = await asyncio.to_thread(
             evaluator.evaluate,

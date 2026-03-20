@@ -498,7 +498,7 @@ Respond with a JSON object only:
             "model_provider": provider,
             "model_name": model,
             "constitution_version": result.constitution_version,
-            "user_prompt": user_prompt,
+            "user_prompt": user_prompt[:10000] if user_prompt else "",
             "llm_response": llm_response[:10000],
             "evaluation": result.to_dict(),
             "latency_ms": latency_ms,

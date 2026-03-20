@@ -19,6 +19,7 @@ from typing import Optional
 logger = logging.getLogger(__name__)
 
 MAX_RESPONSE_LENGTH = 64 * 1024
+MAX_PROMPT_LENGTH = 10 * 1024
 AUDIT_WRITE_RETRIES = 3
 AUDIT_WRITE_RETRY_DELAY = 0.5
 
@@ -147,6 +148,10 @@ class AuditStore:
         if len(llm_response) > MAX_RESPONSE_LENGTH:
             logger.warning(f"LLM response truncated from {len(llm_response)} to {MAX_RESPONSE_LENGTH} chars")
 
+        prompt_truncated = (user_prompt or "")[:MAX_PROMPT_LENGTH]
+        if user_prompt and len(user_prompt) > MAX_PROMPT_LENGTH:
+            logger.warning(f"User prompt truncated from {len(user_prompt)} to {MAX_PROMPT_LENGTH} chars")
+
         violations_json = json.dumps(violations, ensure_ascii=False)
 
         conn = self._get_connection()
@@ -171,7 +176,7 @@ class AuditStore:
                         model_provider,
                         model_name,
                         constitution_version,
-                        user_prompt,
+                        prompt_truncated,
                         response_truncated,
                         int(compliant),
                         score,

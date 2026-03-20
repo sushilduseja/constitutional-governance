@@ -1,18 +1,24 @@
 # Constitutional Governance SDK
 
-A model-agnostic constitutional AI monitoring layer that evaluates LLM outputs against a plain-English constitution using a separate LLM as interpreter. Monitoring never blocks - the user's LLM response always returns regardless of evaluation success.
+A model-agnostic constitutional AI monitoring layer for production LLM applications. Every LLM output is evaluated against a plain-English constitution using a separate LLM as interpreter — without blocking the user's response.
+
+**The core problem it solves:** LLMs hallucinate, fabricate citations, express bias, and behave inconsistently across runs. Constitutional governance gives you observable, versioned, auditable evidence of what your AI said and whether it violated your standards.
+
+**Who it's for:** Engineering teams deploying LLMs in customer support, financial advisory, HR automation, medical information, legal review, and any domain where AI errors have real consequences.
+
+---
 
 ## Features
 
-- **Async-first evaluation**: SDK returns immediately, evaluation happens in background
-- **Non-blocking monitoring**: Even if interpreter LLM fails, user response still returns
-- **Constitution versioning**: Every constitution change is a version; evaluations tagged with version used
-- **No PII by default**: Logs only evaluation metadata unless PII logging explicitly enabled
-- **Multi-provider support**: Groq (default, free tier), Anthropic (Claude), OpenAI (GPT) adapters
-- **Smart output truncation**: Paragraph-boundary chunking for long outputs (>8K tokens)
-- **Golden set consistency checking**: Validate interpreter consistency over time
-- **Audit log**: SQLite (MVP), PostgreSQL (production) with append-only schema
-- **Dashboard**: Single-page monitoring UI with stats, audit log feed, and constitution rules panel
+- **Observe-only, never blocks** — The user's LLM response always returns immediately. Evaluation happens asynchronously in the background.
+- **Plain-English constitutions** — Define your standards as JSON rules, not code. "The AI must not fabricate sources" is a rule.
+- **Versioned everything** — Constitutions, interpreter prompts, and evaluations are all tagged with versions. Roll back with confidence.
+- **No PII by default** — Prompts and responses are stored with length limits and can be redacted. No sensitive data in audit logs unless you explicitly enable it.
+- **Groq free tier** — No Anthropic or OpenAI API keys needed for the interpreter. Uses Groq's free tier with automatic model fallbacks.
+- **SQLite audit log** — Append-only, immutable. Every evaluation is recorded with timestamp, model, score, and violations.
+- **Analytics dashboard** — Live monitoring UI showing compliance rates, violation trends, and per-model breakdown.
+
+---
 
 ## Architecture
 
@@ -22,140 +28,122 @@ USER / APPLICATION
         ▼
 GOVERNANCE WRAPPER SDK
         │
-        ┌──────────────┴──────────────┐
-        ▼                              ▼
-LLM PROVIDER                  GOVERNANCE SERVICE
- (Claude/GPT/etc)               (evaluates output)
-                                    │
-                                    ┌──────────────┼──────────────┐
-                                    ▼              ▼              ▼
-                            ┌────────────┐  ┌─────────────┐  ┌────────────┐
-                            │CONSTITUTION│  │  AUDIT LOG  │  │ ANALYTICS │
-                            │   STORE    │  │  DATABASE   │  │ & REPORTING│
-                            └────────────┘  └─────────────┘  └────────────┘
-                                        │
-                                        ▼
-                            ┌─────────────────────┐
-                            │SELF-IMPROVEMENT     │
-                            │ENGINE               │
-                            │(pattern detection + │
-                            │ rule suggestions)   │
-                            └─────────────────────┘
+        ▼
+LLM PROVIDER ────────────► USER RECEIVES RESPONSE (no delay)
+        │
+        │ async evaluation
+        ▼
+CONSTITUTION STORE + GROQ INTERPRETER
+        │
+        ▼
+SQLITE AUDIT LOG ──► ANALYTICS ──► DASHBOARD
 ```
 
-## Installation
+---
 
-```bash
-pip install -r requirements.txt
-```
+## Enterprise Use Cases
+
+| Domain | What Gets Caught |
+|--------|----------------|
+| **Customer Support** | Fabricated policies, unsafe refund claims, unverified legal statements |
+| **Financial Advisory** | Hallucinated statistics, fake regulatory citations, unqualified recommendations |
+| **HR Automation** | Discriminatory language in rejections, unverified skill assessments |
+| **Medical Information** | Unverified health claims, fabricated research citations |
+| **Legal Review** | Incorrect statute references, fabricated case law |
+
+---
 
 ## Quick Start
 
-```python
-from sdk.governance import Governance
-import anthropic
-
-# Initialize governance wrapper
-gov = Governance(
-    constitution_path="constitution/rules/default_v1.json",
-    mode="sync",  # or "async" for non-blocking
-)
-
-# Initialize LLM client
-client = anthropic.Anthropic()
-
-# Wrap LLM calls
-prompts = [
-    "Who discovered penicillin and where?",
-    "What is the largest planet in our solar system?",
-    "What is the capital of France?"
-]
-
-for prompt in prompts:
-    raw_response = client.messages.create(
-        model="claude-3-5-sonnet-20260220",  # or any other model
-        max_tokens=512,
-        messages=[{"role": "user", "content": prompt}],
-    )
-
-    gov.wrap(
-        provider="anthropic",
-        raw_response=raw_response,
-        user_prompt=prompt,
-    )
-
-    # Original response is returned unmodified
-    text = raw_response.content[0].text
-    print(f"RESPONSE: {text[:200]}...")
+```bash
+pip install -r requirements.txt
+cp .env.example .env
+# Add your GROQ_API_KEY (free at console.groq.com)
 ```
 
-## Dashboard
+### Python SDK
 
-Run the governance service to access the monitoring dashboard:
+```python
+from sdk.governance import Governance
+
+gov = Governance(mode="async")
+
+raw_response = anthropic_client.messages.create(
+    model="claude-3-5-sonnet",
+    messages=[{"role": "user", "content": "What is the SEC's regulation for crypto?"}]
+)
+
+gov.wrap(provider="anthropic", raw_response=raw_response)
+# Response returns immediately — evaluation happens in background
+```
+
+### Dashboard
 
 ```bash
 uvicorn service.app:app --reload
-# Then visit: http://localhost:8000/
+# Visit: http://localhost:8000
 ```
 
-The dashboard shows:
-- **Stats bar**: Total evaluations, compliance rate %, active violations, constitution version
-- **Audit log feed**: Scrollable table with timestamp, model, compliant status (✓/✗), score, violation count
-- **Constitution rules panel**: All rules with severity badges and enabled toggles
+### REST API
+
+```bash
+curl -X POST http://localhost:8000/evaluate \
+  -H "Content-Type: application/json" \
+  -d '{
+    "user_prompt": "What is your refund policy?",
+    "llm_response": "You can return items within 30 days for a full refund.",
+    "model_provider": "anthropic",
+    "model_name": "claude-3-5-sonnet"
+  }'
+```
+
+---
 
 ## API Endpoints
 
-- `GET /` → Redirects to dashboard (`/static/index.html`)
-- `GET /health` → Service health check
-- `GET /api/stats` → Dashboard statistics
-- `GET /api/constitution` → Current constitution rules
-- `GET /api/audit-log` → Audit log entries (with optional `limit` parameter)
-- `POST /api/audit-log/refresh` → Refresh audit log cache
-- `POST /evaluate` → Evaluate LLM response against constitution
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET` | `/` | Dashboard |
+| `GET` | `/health` | Health check |
+| `GET` | `/api/stats` | Compliance statistics |
+| `GET` | `/api/constitution` | Current constitution rules |
+| `GET` | `/api/audit-log` | Evaluation records |
+| `GET` | `/api/analytics` | Full analytics report |
+| `POST` | `/evaluate` | Evaluate a response |
 
-## Configuration
+---
 
-See `docs/designs/constitutional-governance.md` for full architecture details.
+## Constitution Format
 
-### Constitution Format
-JSON files in `constitution/rules/` directory:
+Rules are plain-English JSON in `constitution/rules/`:
+
 ```json
 {
   "version": "1.0.0",
   "rules": [
     {
       "id": "rule_truth_001",
-      "text": "The AI must not make verifiable false claims about real-world facts...",
+      "text": "The AI must not make verifiable false claims about real-world facts.",
       "severity": "critical",
       "enabled": true,
-      "tags": ["truthfulness", "accuracy"],
-      "created_at": "2026-03-18T00:00:00Z",
-      "updated_at": "2026-03-18T00:00:00Z"
+      "tags": ["truthfulness", "accuracy"]
     }
-    // ... more rules
-  ],
-  "metadata": {
-    "name": "Default Safety Constitution v1",
-    "description": "MVP starting constitution"
-  }
+  ]
 }
 ```
 
-## Development
+---
 
-Run tests:
+## Running Tests
+
 ```bash
 pytest
 ```
 
-Run specific test suites:
-```bash
-pytest tests/test_constitution.py
-pytest tests/test_governance.py
-pytest tests/test_json_parse.py
-pytest tests/test_smart_chunk.py
-```
+---
 
-## License
+## See Also
 
-MIT
+- `docs/designs/constitutional-governance.md` — Full architecture
+- `examples/quickstart.py` — Three enterprise use cases with examples
+- `TODOS.md` — What's coming next

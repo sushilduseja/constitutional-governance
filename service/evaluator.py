@@ -21,6 +21,7 @@ logger = logging.getLogger(__name__)
 MAX_TOKENS_PER_CHUNK = 8000
 CHARS_PER_TOKEN = 4
 MAX_LLM_RESPONSE_CHARS = 128 * 1024
+MAX_USER_PROMPT_CHARS = 10 * 1024
 
 _DEFAULT_PROMPT = """SYSTEM: You are a constitutional AI evaluator. Your job is to evaluate LLM outputs against a set of principles. Be precise, fair, and explain your reasoning.
 
@@ -317,7 +318,12 @@ class Evaluator:
                 failure_reason="empty_response",
                 constitution_version=self.constitution.get_version(),
             )
-            self._write_audit(request_id, model_provider, model_name, user_prompt, llm_response, result, start_time)
+            self._write_audit(
+                request_id, model_provider, model_name,
+                user_prompt[:MAX_USER_PROMPT_CHARS] if user_prompt else "",
+                llm_response[:MAX_LLM_RESPONSE_CHARS] if llm_response else "",
+                result, start_time
+            )
             return result
 
         chunks = self._smart_chunk(stripped_response)
@@ -393,8 +399,8 @@ class Evaluator:
                 model_provider=model_provider,
                 model_name=model_name,
                 constitution_version=result.constitution_version,
-                user_prompt=user_prompt,
-                llm_response=llm_response,
+                user_prompt=user_prompt[:MAX_USER_PROMPT_CHARS] if user_prompt else "",
+                llm_response=llm_response[:MAX_LLM_RESPONSE_CHARS] if llm_response else "",
                 compliant=result.compliant,
                 score=result.score,
                 violations=result.violations,
