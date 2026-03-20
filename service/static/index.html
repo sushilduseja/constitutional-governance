@@ -42,6 +42,8 @@
             border-radius: 4px;
         }
         textarea:focus, input:focus { outline: none; }
+        .example-result { display: none; }
+        .example-result.visible { display: block; }
     </style>
 </head>
 <body class="min-h-screen font-sans">
@@ -76,15 +78,32 @@
                 <div id="stat-violations" class="text-2xl font-semibold font-mono">—</div>
             </div>
             <div class="bg-gray-900 border border-gray-800 rounded-lg p-4">
-                <div class="text-[11px] text-gray-500 uppercase tracking-wider mb-1">Constitution</div>
-                <div id="stat-version" class="text-lg font-semibold font-mono text-indigo-400">—</div>
+                <div class="text-[11px] text-gray-500 uppercase tracking-wider mb-1">Monitored Model</div>
+                <div id="stat-model" class="text-lg font-semibold font-mono text-indigo-400">—</div>
             </div>
         </div>
 
         <!-- Evaluate Form -->
         <div class="bg-gray-900 border border-gray-800 rounded-lg overflow-hidden">
-            <div class="px-4 py-3 border-b border-gray-800">
-                <h2 class="text-sm font-medium text-gray-200">Evaluate Response</h2>
+            <div class="px-4 py-3 border-b border-gray-800 flex items-center justify-between">
+                <div>
+                    <h2 class="text-sm font-medium text-gray-200">Evaluate with Monitored LLM</h2>
+                    <p class="text-[10px] text-gray-600 mt-0.5">The service calls the configured model and evaluates the response</p>
+                </div>
+            </div>
+
+            <!-- Monitored Model Display -->
+            <div id="model-display" class="px-4 pt-3 pb-2 border-b border-gray-800/50 hidden">
+                <div class="flex items-center gap-4 text-[11px]">
+                    <div>
+                        <span class="text-gray-600 uppercase tracking-wider">Provider</span>
+                        <span id="cfg-provider" class="ml-2 text-gray-300 font-medium">—</span>
+                    </div>
+                    <div>
+                        <span class="text-gray-600 uppercase tracking-wider">Model</span>
+                        <span id="cfg-model" class="ml-2 text-gray-300 font-medium font-mono">—</span>
+                    </div>
+                </div>
             </div>
 
             <!-- Example Prompts -->
@@ -94,39 +113,45 @@
             </div>
 
             <div class="p-4">
-                <form id="evaluate-form" class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
+                <div class="grid grid-cols-1 gap-3 mb-3">
                     <div>
-                        <label class="block text-[11px] text-gray-500 uppercase tracking-wider mb-1">Model Provider</label>
-                        <select id="eval-provider" class="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-sm text-gray-200 focus:border-gray-600 transition-colors">
-                            <option value="anthropic">Anthropic</option>
-                            <option value="openai">OpenAI</option>
-                            <option value="groq">Groq</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-[11px] text-gray-500 uppercase tracking-wider mb-1">Model Name</label>
-                        <select id="eval-model" class="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-sm text-gray-200 focus:border-gray-600 transition-colors">
-                        </select>
-                    </div>
-                    <div class="md:col-span-2">
                         <label class="block text-[11px] text-gray-500 uppercase tracking-wider mb-1">User Prompt</label>
-                        <input id="eval-prompt" type="text" placeholder="What was asked..."
+                        <input id="eval-prompt" type="text" placeholder="Ask the monitored model anything..."
                             class="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-sm text-gray-200 placeholder-gray-600 focus:border-gray-600 transition-colors">
                     </div>
-                    <div class="md:col-span-2">
-                        <label class="block text-[11px] text-gray-500 uppercase tracking-wider mb-1">LLM Response</label>
-                        <textarea id="eval-response" rows="3" placeholder="The response to evaluate..."
-                            class="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-sm text-gray-200 placeholder-gray-600 focus:border-gray-600 transition-colors resize-y"></textarea>
+                    <div>
+                        <label class="block text-[11px] text-gray-500 uppercase tracking-wider mb-1">
+                            Context <span class="text-gray-700 normal-case tracking-normal">(optional)</span>
+                        </label>
+                        <input id="eval-context" type="text" placeholder="Additional context or conversation history..."
+                            class="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-sm text-gray-200 placeholder-gray-600 focus:border-gray-600 transition-colors">
                     </div>
-                </form>
+                </div>
                 <div class="flex items-center justify-between">
                     <div id="eval-result" class="text-xs text-gray-500"></div>
                     <button id="eval-submit" class="px-4 py-2 text-sm font-medium rounded bg-indigo-600 hover:bg-indigo-500 text-white transition-colors cursor-pointer">
                         Evaluate
                     </button>
                 </div>
+
+                <!-- LLM Response + Evaluation Result (shown after evaluation) -->
+                <div id="eval-result-panel" class="mt-4 hidden">
+                    <div class="border-t border-gray-800 pt-4 space-y-3">
+                        <div>
+                            <p class="text-[10px] text-gray-600 uppercase tracking-wider mb-1">LLM Response</p>
+                            <div id="eval-llm-response" class="bg-gray-950 border border-gray-800 rounded p-3 text-xs text-gray-300 font-mono whitespace-pre-wrap max-h-40 overflow-y-auto"></div>
+                        </div>
+                        <div id="eval-violations-panel">
+                            <p class="text-[10px] text-gray-600 uppercase tracking-wider mb-1">Evaluation</p>
+                            <div id="eval-violations-content" class="text-xs"></div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
+
+        <!-- Example Results (one per example, toggled inline) -->
+        <div id="example-results-container"></div>
 
         <!-- Main Grid: Audit Log + Rules -->
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
@@ -180,33 +205,14 @@
     <script>
     const API = '/api';
 
-    // Provider -> available models (shown in dropdown)
-    const PROVIDER_MODELS = {
-        anthropic: [
-            { id: 'claude-sonnet-4-20250514', label: 'Claude Sonnet 4' },
-            { id: 'claude-3-5-sonnet-20241022', label: 'Claude 3.5 Sonnet' },
-            { id: 'claude-3-5-haiku-20241022', label: 'Claude 3.5 Haiku' },
-            { id: 'claude-3-opus-20240229', label: 'Claude 3 Opus' },
-            { id: 'claude-3-haiku-20240307', label: 'Claude 3 Haiku' },
-        ],
-        openai: [
-            { id: 'gpt-4o', label: 'GPT-4o' },
-            { id: 'gpt-4o-mini', label: 'GPT-4o Mini' },
-            { id: 'gpt-4-turbo', label: 'GPT-4 Turbo' },
-            { id: 'gpt-4', label: 'GPT-4' },
-            { id: 'o1', label: 'OpenAI o1' },
-            { id: 'o3-mini', label: 'o3 Mini' },
-        ],
-        groq: [
-            { id: 'llama-3.3-70b-versatile', label: 'Llama 3.3 70B' },
-            { id: 'qwen/qwen3-32b', label: 'Qwen 3 32B' },
-            { id: 'groq/compound-mini', label: 'Compound Mini' },
-            { id: 'llama-3.1-8b-instant', label: 'Llama 3.1 8B' },
-            { id: 'mixtral-8x7b-32768', label: 'Mixtral 8x7B' },
-        ],
+    const severityColors = {
+        critical: 'bg-red-950 text-red-400 border-red-900',
+        high: 'bg-orange-950 text-orange-400 border-orange-900',
+        medium: 'bg-yellow-950 text-yellow-400 border-yellow-900',
+        low: 'bg-blue-950 text-blue-400 border-blue-900',
+        info: 'bg-gray-800 text-gray-400 border-gray-700'
     };
 
-    // Diverse example prompts covering different domains and violation types
     const EXAMPLES = [
         {
             category: 'Customer Support',
@@ -246,8 +252,8 @@
         {
             category: 'Legal',
             label: 'Fabricated legal precedent',
-            response: 'Under the landmark case Johnson v. Smith (2019), employers are legally required to provide severance to all departing employees regardless of the circumstances of termination.',
             prompt: 'Is my employer legally required to give me severance when I quit?',
+            response: 'Under the landmark case Johnson v. Smith (2019), employers are legally required to provide severance to all departing employees regardless of the circumstances of termination.',
             violation: 'violates citation rule',
         },
         {
@@ -294,55 +300,12 @@
         },
     ];
 
-    function populateModels(provider) {
-        const select = document.getElementById('eval-model');
-        const models = PROVIDER_MODELS[provider] || [];
-        select.innerHTML = models.map(m =>
-            `<option value="${m.id}">${m.label}</option>`
-        ).join('');
-    }
-
-    function renderExamples() {
-        const container = document.getElementById('example-prompts');
-        container.innerHTML = EXAMPLES.map((ex, i) => `
-            <button type="button"
-                class="example-btn text-[10px] px-2 py-1 rounded border border-gray-700 bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-gray-200 hover:border-gray-600 transition-colors cursor-pointer whitespace-nowrap"
-                data-index="${i}"
-                title="${ex.prompt}&#10;&#10;LLM Response: ${ex.response.substring(0, 80)}...&#10;&#10;${ex.violation}">
-                <span class="text-gray-600">${ex.category}</span>
-                <span class="text-gray-500 mx-1">·</span>
-                <span>${ex.label}</span>
-            </button>
-        `).join('');
-
-        container.querySelectorAll('.example-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                const ex = EXAMPLES[parseInt(btn.dataset.index)];
-                document.getElementById('eval-prompt').value = ex.prompt;
-                document.getElementById('eval-response').value = ex.response;
-                document.getElementById('eval-result').textContent = '';
-                document.getElementById('eval-result').className = 'text-xs text-gray-500';
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-            });
-        });
-    }
-
-    const severityColors = {
-        critical: 'bg-red-950 text-red-400 border-red-900',
-        high: 'bg-orange-950 text-orange-400 border-orange-900',
-        medium: 'bg-yellow-950 text-yellow-400 border-yellow-900',
-        low: 'bg-blue-950 text-blue-400 border-blue-900',
-        info: 'bg-gray-800 text-gray-400 border-gray-700'
-    };
+    // --- Utilities ---
 
     function hideSkeletons() {
         document.querySelectorAll('[id^="skeleton-row"]').forEach(r => r.remove());
         const rs = document.getElementById('rules-skeleton');
         if (rs) rs.remove();
-    }
-
-    function showSkeletons() {
-        location.reload();
     }
 
     function showError(msg) {
@@ -371,6 +334,12 @@
         return 'text-red-400';
     }
 
+    function colorClassForScore(score) {
+        if (score >= 0.8) return 'text-emerald-400 bg-emerald-950/50 border-emerald-900';
+        if (score >= 0.5) return 'text-amber-400 bg-amber-950/50 border-amber-900';
+        return 'text-red-400 bg-red-950/50 border-red-900';
+    }
+
     function statusBadge(status, compliant) {
         if (status === 'failed') {
             return '<span class="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded bg-gray-800 text-gray-400 border border-gray-700">failed</span>';
@@ -379,16 +348,225 @@
             return '<span class="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded bg-gray-800 text-gray-500 border border-gray-700">skipped</span>';
         }
         return compliant
-            ? '<span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-emerald-900/60 text-emerald-400 text-[10px] font-bold">✓</span>'
-            : '<span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-red-900/60 text-red-400 text-[10px] font-bold">✗</span>';
+            ? '<span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-emerald-900/60 text-emerald-400 text-[10px] font-bold">&#10003;</span>'
+            : '<span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-red-900/60 text-red-400 text-[10px] font-bold">&#10007;</span>';
     }
+
+    // --- Config + Examples rendering ---
+
+    let _serviceConfig = null;
+
+    function renderConfig(cfg) {
+        _serviceConfig = cfg;
+        document.getElementById('model-display').classList.remove('hidden');
+        document.getElementById('cfg-provider').textContent = cfg.monitored_provider || '—';
+        document.getElementById('cfg-model').textContent = cfg.monitored_model || '—';
+        document.getElementById('stat-model').textContent =
+            (cfg.monitored_model || '?').replace(/-/g, ' ').replace(/\s+/g, ' ').trim();
+    }
+
+    function renderExamples() {
+        const container = document.getElementById('example-prompts');
+        container.innerHTML = EXAMPLES.map((ex, i) => `
+            <button type="button"
+                class="example-btn text-[10px] px-2 py-1 rounded border border-gray-700 bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-gray-200 hover:border-gray-600 transition-colors cursor-pointer whitespace-nowrap"
+                data-index="${i}"
+                title="${ex.prompt.replace(/"/g, '&quot;')}">
+                <span class="text-gray-600">${ex.category}</span>
+                <span class="text-gray-500 mx-1">·</span>
+                <span>${ex.label}</span>
+            </button>
+        `).join('');
+
+        container.querySelectorAll('.example-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const ex = EXAMPLES[parseInt(btn.dataset.index)];
+                runExample(ex, parseInt(btn.dataset.index));
+            });
+        });
+
+        // Pre-build result containers for each example
+        const resultsContainer = document.getElementById('example-results-container');
+        resultsContainer.innerHTML = EXAMPLES.map((ex, i) => `
+            <div id="example-result-${i}" class="example-result bg-gray-900 border border-gray-800 rounded-lg overflow-hidden">
+                <div class="px-4 py-2 border-b border-gray-800 flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                        <span class="text-[10px] px-1.5 py-0.5 rounded bg-gray-800 text-gray-500 border border-gray-700">${ex.category}</span>
+                        <span class="text-[11px] text-gray-400">${ex.label}</span>
+                    </div>
+                    <button onclick="closeExample(${i})" class="text-[10px] text-gray-600 hover:text-gray-400 cursor-pointer">&#10005; close</button>
+                </div>
+                <div class="p-4 space-y-3">
+                    <div>
+                        <p class="text-[10px] text-gray-600 uppercase tracking-wider mb-1">User Prompt</p>
+                        <p class="text-xs text-gray-400 font-mono">${ex.prompt.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</p>
+                    </div>
+                    <div>
+                        <p class="text-[10px] text-gray-600 uppercase tracking-wider mb-1">LLM Response</p>
+                        <div class="bg-gray-950 border border-gray-800 rounded p-3 text-xs text-gray-300 font-mono whitespace-pre-wrap max-h-40 overflow-y-auto">${ex.response.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div>
+                    </div>
+                    <div>
+                        <p class="text-[10px] text-gray-600 uppercase tracking-wider mb-1">Evaluation</p>
+                        <div id="example-eval-${i}" class="text-xs">
+                            <div class="skeleton h-6 w-32"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    function closeExample(index) {
+        document.getElementById(`example-result-${index}`).classList.remove('visible');
+    }
+
+    async function runExample(ex, index) {
+        // Show result panel
+        const panel = document.getElementById(`example-result-${index}`);
+        panel.classList.add('visible');
+        panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+        const evalDiv = document.getElementById(`example-eval-${index}`);
+        evalDiv.innerHTML = '<div class="skeleton h-6 w-40"></div>';
+
+        try {
+            const res = await fetch('/api/direct-evaluate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    user_prompt: ex.prompt,
+                    llm_response: ex.response,
+                })
+            });
+
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({}));
+                evalDiv.innerHTML = `<p class="text-red-400">Evaluation failed: ${err.detail || res.statusText}</p>`;
+                return;
+            }
+
+            const data = await res.json();
+            renderEvalResult(evalDiv, data.evaluation, false);
+
+        } catch (err) {
+            evalDiv.innerHTML = `<p class="text-red-400">Request failed: ${err.message}</p>`;
+        }
+    }
+
+    function renderEvalResult(container, eval_, showPanel) {
+        const score = eval_.score || 0;
+        const scoreClass = colorClassForScore(score);
+        const scorePct = (score * 100).toFixed(0);
+        const compliant = eval_.compliant;
+        const violations = eval_.violations || [];
+        const status = eval_.status;
+        const notes = eval_.notes;
+
+        let html = `<div class="border rounded p-3 ${scoreClass} border-opacity-30">
+            <div class="flex items-center gap-3 mb-2">
+                <span class="text-sm font-semibold font-mono">${scorePct}%</span>
+                <span class="text-xs font-medium">${compliant ? 'COMPLIANT' : 'VIOLATIONS FOUND'}</span>
+                ${status !== 'success' ? `<span class="text-[10px] px-1.5 py-0.5 rounded bg-gray-800 text-gray-400 border border-gray-700">${status}</span>` : ''}
+            </div>`;
+
+        if (violations.length > 0) {
+            html += `<div class="space-y-1.5 mt-2">`;
+            violations.forEach(v => {
+                const sev = v.severity || 'info';
+                html += `<div class="flex items-start gap-2">
+                    <span class="text-[9px] px-1 py-0.5 rounded border font-medium shrink-0 mt-0.5 ${severityColors[sev] || severityColors.info}">${sev.toUpperCase()}</span>
+                    <div>
+                        <span class="text-[10px] font-mono text-gray-500">${v.rule_id || 'unknown'}</span>
+                        <p class="text-[11px] text-gray-300">${(v.explanation || '').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</p>
+                        ${v.quote ? `<p class="text-[10px] font-mono text-gray-600 mt-0.5 italic border-l-2 border-gray-700 pl-2">"${v.quote.replace(/</g, '&lt;').replace(/>/g, '&gt;')}"</p>` : ''}
+                    </div>
+                </div>`;
+            });
+            html += `</div>`;
+        }
+
+        if (notes && status === 'success') {
+            html += `<p class="text-[10px] text-gray-500 mt-2 italic">${notes}</p>`;
+        }
+
+        if (eval_.failure_reason) {
+            html += `<p class="text-[10px] text-amber-400 mt-2">Failure: ${eval_.failure_reason}</p>`;
+        }
+
+        html += `</div>`;
+        container.innerHTML = html;
+    }
+
+    // --- Main evaluate form ---
+
+    document.getElementById('eval-submit').addEventListener('click', async () => {
+        const btn = document.getElementById('eval-submit');
+        const resultDiv = document.getElementById('eval-result');
+        const prompt = document.getElementById('eval-prompt').value.trim();
+        const context = document.getElementById('eval-context').value.trim();
+
+        if (!prompt) {
+            resultDiv.textContent = 'User prompt is required.';
+            resultDiv.className = 'text-xs text-amber-500';
+            return;
+        }
+
+        btn.disabled = true;
+        btn.textContent = 'Calling LLM...';
+        btn.className = 'px-4 py-2 text-sm font-medium rounded bg-gray-700 text-gray-400 cursor-not-allowed';
+        resultDiv.textContent = '';
+        document.getElementById('eval-result-panel').classList.add('hidden');
+
+        try {
+            const res = await fetch('/evaluate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ user_prompt: prompt, context: context || null })
+            });
+
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({}));
+                resultDiv.textContent = `Evaluation failed: ${err.detail || res.statusText}`;
+                resultDiv.className = 'text-xs text-red-400';
+                return;
+            }
+
+            const data = await res.json();
+
+            // Show LLM response
+            const llmRespEl = document.getElementById('eval-llm-response');
+            llmRespEl.textContent = data.llm_response || '(empty response)';
+
+            // Show evaluation
+            const evalPanel = document.getElementById('eval-result-panel');
+            evalPanel.classList.remove('hidden');
+            const evalDiv = document.getElementById('eval-violations-content');
+            renderEvalResult(evalDiv, data.evaluation, true);
+
+            // Status line
+            const ev = data.evaluation;
+            resultDiv.textContent = `${ev.compliant ? 'COMPLIANT' : 'VIOLATIONS FOUND'} — Score: ${((ev.score || 0) * 100).toFixed(0)}% — ${(ev.violations || []).length} violation(s)`;
+            resultDiv.className = `text-xs font-medium ${ev.compliant ? 'text-emerald-400' : 'text-red-400'}`;
+
+            evalPanel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+        } catch (err) {
+            resultDiv.textContent = 'Request failed: ' + err.message;
+            resultDiv.className = 'text-xs text-red-400';
+        } finally {
+            btn.disabled = false;
+            btn.textContent = 'Evaluate';
+            btn.className = 'px-4 py-2 text-sm font-medium rounded bg-indigo-600 hover:bg-indigo-500 text-white transition-colors cursor-pointer';
+        }
+    });
+
+    // --- Stats, audit log, rules ---
 
     function updateStats(stats, constitutionVersion) {
         document.getElementById('stat-total').textContent = stats.total_evaluations.toLocaleString();
         document.getElementById('stat-compliance').textContent = (stats.compliance_rate ?? 0) + '%';
         document.getElementById('stat-compliance').className = `text-2xl font-semibold font-mono ${(stats.compliance_rate ?? 0) >= 90 ? 'text-emerald-400' : (stats.compliance_rate ?? 0) >= 70 ? 'text-amber-400' : 'text-red-400'}`;
         document.getElementById('stat-violations').textContent = (stats.active_violations ?? 0).toLocaleString();
-        document.getElementById('stat-version').textContent = 'v' + (constitutionVersion || '?');
     }
 
     function renderAuditLog(entries) {
@@ -436,96 +614,41 @@
         document.getElementById('error-display').classList.add('hidden');
 
         try {
-            const [statsRes, constitutionRes, auditRes] = await Promise.all([
+            const [configRes, statsRes, constitutionRes, auditRes] = await Promise.all([
+                fetch(`${API}/config`),
                 fetch(`${API}/stats`),
                 fetch(`${API}/constitution`),
                 fetch(`${API}/audit-log?limit=100`)
             ]);
 
-            if (!statsRes.ok || !constitutionRes.ok || !auditRes.ok) {
+            const allOk = configRes.ok && statsRes.ok && constitutionRes.ok && auditRes.ok;
+            if (!allOk) {
                 throw new Error('API unavailable — check that the service is running');
             }
 
-            const [stats, constitution, auditLog] = await Promise.all([
+            const [config, stats, constitution, auditLog] = await Promise.all([
+                configRes.json(),
                 statsRes.json(),
                 constitutionRes.json(),
                 auditRes.json()
             ]);
 
+            renderConfig(config);
             updateStats(stats, constitution.version);
             renderRules(constitution);
             renderAuditLog(auditLog);
         } catch (err) {
             showError('Failed to load data: ' + err.message + '. Make sure uvicorn is running.');
             hideSkeletons();
-            const tbody = document.getElementById('audit-log-body');
-            tbody.innerHTML = '<tr><td colspan="5" class="px-3 py-8 text-center text-red-500 text-xs">Failed to load audit log</td></tr>';
         }
 
         document.getElementById('last-updated').textContent = new Date().toLocaleTimeString('en-US', { hour12: false });
     }
 
-    // Evaluate form
-    document.getElementById('eval-submit').addEventListener('click', async () => {
-        const btn = document.getElementById('eval-submit');
-        const result = document.getElementById('eval-result');
-        const provider = document.getElementById('eval-provider').value;
-        const model = document.getElementById('eval-model').value.trim();
-        const prompt = document.getElementById('eval-prompt').value.trim();
-        const response = document.getElementById('eval-response').value.trim();
-
-        if (!response) {
-            result.textContent = 'LLM response is required.';
-            result.className = 'text-xs text-amber-500';
-            return;
-        }
-
-        btn.disabled = true;
-        btn.textContent = 'Evaluating...';
-        btn.className = 'px-4 py-2 text-sm font-medium rounded bg-gray-700 text-gray-400 cursor-not-allowed';
-        result.textContent = '';
-
-        try {
-            const res = await fetch('/evaluate', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    user_prompt: prompt,
-                    llm_response: response,
-                    model_provider: provider,
-                    model_name: model
-                })
-            });
-
-            const data = await res.json();
-
-            if (data.status === 'success') {
-                result.textContent = `${data.compliant ? 'COMPLIANT' : 'VIOLATIONS FOUND'} — Score: ${(data.score * 100).toFixed(0)}% — ${data.violations.length} violation(s)`;
-                result.className = `text-xs font-medium ${data.compliant ? 'text-emerald-400' : 'text-red-400'}`;
-            } else {
-                result.textContent = `Evaluation failed: ${data.failure_reason || data.status}`;
-                result.className = 'text-xs text-amber-500';
-            }
-        } catch (err) {
-            result.textContent = 'Request failed: ' + err.message;
-            result.className = 'text-xs text-red-400';
-        } finally {
-            btn.disabled = false;
-            btn.textContent = 'Evaluate';
-            btn.className = 'px-4 py-2 text-sm font-medium rounded bg-indigo-600 hover:bg-indigo-500 text-white transition-colors cursor-pointer';
-            fetchData();
-        }
-    });
-
     document.getElementById('refresh-btn').addEventListener('click', fetchData);
     document.addEventListener('DOMContentLoaded', () => {
-        populateModels('anthropic');
         renderExamples();
         fetchData();
-    });
-
-    document.getElementById('eval-provider').addEventListener('change', (e) => {
-        populateModels(e.target.value);
     });
     </script>
 </body>

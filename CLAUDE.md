@@ -46,6 +46,13 @@ This is a greenfield project building a model-agnostic constitutional AI monitor
 - **Adapter pattern**: Each LLM provider has an adapter implementing `LLMAdapter` protocol
 - **Modes**: sync / async / fire-and-forget. Default: async.
 
+## Service Endpoint Design
+
+- **`POST /evaluate`** — Service makes the LLM call internally using the configured monitored model (`MONITORED_PROVIDER` + `MONITORED_MODEL` env vars). Returns `{ llm_response, evaluation }`. Monitoring is invisible to callers — they send a prompt, get back the LLM response and its evaluation.
+- **`POST /api/direct-evaluate`** — Evaluates a pre-written response without making an LLM call. Used for quick testing and the dashboard example buttons.
+- **`GET /api/config`** — Exposes `monitored_provider`, `monitored_model`, and `provider_models` map. Dashboard reads this to show the configured model.
+- **Security**: `model_provider` and `model_name` are NOT caller-controlled. They are service configuration only.
+
 ## Audit Log
 
 - **Storage**: SQLite (MVP), PostgreSQL (production)
