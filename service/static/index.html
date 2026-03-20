@@ -192,11 +192,11 @@
         }
 
         // Update stats display
-        function updateStats(stats) {
+        function updateStats(stats, constitutionVersion) {
             document.getElementById('stat-total').textContent = stats.total_evaluations.toLocaleString();
             document.getElementById('stat-compliance').textContent = stats.compliance_rate.toFixed(1) + '%';
             document.getElementById('stat-violations').textContent = stats.active_violations.toLocaleString();
-            document.getElementById('stat-version').textContent = 'v' + stats.constitution_version;
+            document.getElementById('stat-version').textContent = 'v' + (constitutionVersion || stats.constitution_version || '?');
         }
 
         // Render audit log table
@@ -222,7 +222,7 @@
                         }
                     </td>
                     <td class="px-4 py-2.5 text-center ${entry.score >= 0.8 ? 'text-emerald-400' : entry.score >= 0.6 ? 'text-yellow-400' : 'text-red-400'}">${entry.score.toFixed(2)}</td>
-                    <td class="px-4 py-2.5 text-center ${entry.violations > 0 ? 'text-red-400' : 'text-slate-400'}">${entry.violations}</td>
+                    <td class="px-4 py-2.5 text-center ${(entry.violations?.length ?? 0) > 0 ? 'text-red-400' : 'text-slate-400'}">${entry.violations?.length ?? 0}</td>
                 </tr>
             `).join('');
         }
@@ -291,7 +291,7 @@
                         constitutionRes.json(),
                         auditRes.json()
                     ]);
-                    updateStats(stats);
+                    updateStats(stats, constitution.version);
                     renderRules(constitution);
                     renderAuditLog(auditLog);
                 } else {

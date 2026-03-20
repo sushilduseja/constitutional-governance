@@ -11,8 +11,11 @@ from fastapi.responses import RedirectResponse
 from pydantic import BaseModel
 from typing import Optional
 from pathlib import Path
+from dotenv import load_dotenv
 import asyncio
 import logging
+
+load_dotenv(Path(__file__).resolve().parent.parent / ".env")
 
 from service.constitution import ConstitutionStore
 from service.audit import AuditStore
