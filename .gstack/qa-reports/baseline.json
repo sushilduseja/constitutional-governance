@@ -1,0 +1,36 @@
+{
+  "date": "2026-03-21",
+  "url": "http://localhost:8000",
+  "branch": "main",
+  "commit": "91f9255",
+  "healthScore": 58,
+  "issues": [
+    {"id": "C-001", "title": "Placeholder text fails WCAG AA contrast at small font sizes", "severity": "critical", "category": "accessibility"},
+    {"id": "C-002", "title": "All interactive elements remove focus indicator without replacement", "severity": "critical", "category": "accessibility"},
+    {"id": "H-001", "title": "All touch targets are below 44x44px minimum", "severity": "high", "category": "accessibility"},
+    {"id": "H-002", "title": "Pure gray palette — no brand tint", "severity": "high", "category": "theming"},
+    {"id": "H-003", "title": "Missing semantic HTML landmarks (header, main, footer)", "severity": "high", "category": "accessibility"},
+    {"id": "H-004", "title": "No skip link for keyboard navigation", "severity": "high", "category": "accessibility"},
+    {"id": "M-001", "title": "Placeholder text used as label proxy on context field", "severity": "medium", "category": "accessibility"},
+    {"id": "M-002", "title": "Skeleton animation lacks reduced-motion support", "severity": "medium", "category": "accessibility"},
+    {"id": "M-003", "title": "Inter is the single most overused font in production UIs", "severity": "medium", "category": "visual"},
+    {"id": "M-004", "title": "Example result panels toggle with no entrance animation", "severity": "medium", "category": "ux"},
+    {"id": "M-005", "title": "Loading button state has no aria-live announcement", "severity": "medium", "category": "accessibility"},
+    {"id": "L-001", "title": "Scrollbar border-radius (3px) conflicts with card radius (8px)", "severity": "low", "category": "visual"},
+    {"id": "L-002", "title": "No zoom prevention on pinch gestures", "severity": "low", "category": "responsive"},
+    {"id": "L-003", "title": "Page title is generic 'AI Governance'", "severity": "low", "category": "content"},
+    {"id": "L-004", "title": "HTML entities used for status icons instead of inline SVG", "severity": "low", "category": "visual"},
+    {"id": "L-005", "title": "Skeleton uses hard-coded hex colors instead of CSS custom properties", "severity": "low", "category": "theming"},
+    {"id": "L-006", "title": "Table overflow on mobile may cause header misalignment", "severity": "low", "category": "responsive"}
+  ],
+  "categoryScores": {
+    "console": 100,
+    "links": 100,
+    "visual": 55,
+    "functional": 70,
+    "accessibility": 35,
+    "performance": 80,
+    "theming": 60,
+    "responsive": 65
+  }
+}
