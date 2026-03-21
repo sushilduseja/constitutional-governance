@@ -49,9 +49,16 @@
 
 ## Typography
 
-- **Body:** Inter 400/500/600/700 — clean, professional, excellent readability at small sizes
-- **Data/Mono:** JetBrains Mono 400/500 — scores, timestamps, model names, violation IDs, code quotes
-- **Scale:** Aggressive small sizes (10px labels, 11px body, 12px inputs, 14px section headers). Dense but not cramped. Respect line-height.
+- **Body:** Instrument Sans 400/500/600/700 — geometric, distinctive, excellent readability. Swap from Inter for personality without sacrificing professionalism.
+- **Data/Mono:** JetBrains Mono 400/500 — restricted to genuine data: scores, timestamps, model names, IDs, code quotes. Never decorative.
+- **Type scale:** 5-step modular scale using CSS custom properties:
+  - `--text-xs` (11px) — uppercase labels with tracking
+  - `--text-sm` (13px) — secondary metadata, table cells
+  - `--text-base` (15px) — body text, inputs (above 14px minimum)
+  - `--text-lg` (18px) — subheadings, model display
+  - `--text-xl` (24px) — page heading
+- **Weight hierarchy:** 400 body, 500 for interactive labels and secondary text, 600 for headings, 700 for data numbers. Strong contrast between levels — no muddiness.
+- **Line-height:** 1.2 tight for headings, 1.4 for labels, 1.55 for body (increased for light-on-dark legibility).
 
 ## Layout Rhythm
 
@@ -64,19 +71,19 @@
 
 | Component | States | Notes |
 |---|---|---|
-| Stat card | Loading (skeleton), populated | Mono font for numbers. Color-coded compliance %. |
-| Example chip | Default, hover, active | Category label in muted color. One action: click to evaluate. |
-| Evaluate form | Empty, loading, result | Button transitions from indigo → gray while loading. Result panel slides in below. |
-| Violation card | Compliant, violated, failed, skipped | Severity badge + explanation + quote. Quotes in italic mono. |
-| Audit log row | Normal, failed (dimmed) | Relative timestamps. Score color-coded. |
-| Constitution rule | Enabled, disabled | ID in mono. Severity badge. Rule text in 11px body. |
+| Stat card | Loading (skeleton), populated | Mono font for numbers (data-num class: 700 weight, tabular-nums). Color-coded compliance %. |
+| Example chip | Default, hover, active | 13px body text, 500 weight. Category muted, label white. One action: click to evaluate. |
+| Evaluate form | Empty, loading, result | Button transitions from indigo → gray while loading. Result panel fades in below. |
+| Violation card | Compliant, violated, failed, skipped | Severity badge + explanation (body readable text) + quote (italic mono). |
+| Audit log row | Normal, failed (dimmed) | Mono timestamps. Mono model names. Body text for status/score/violations. |
+| Constitution rule | Enabled, disabled | ID in mono. Severity badge. Rule text in 13px body. |
 | Error banner | Hidden, visible | Red-950 background. Appears at top of layout, not inline. |
 
 ## Tech Stack
 
 - **Backend:** FastAPI + uvicorn + SQLite (WAL mode)
 - **Frontend:** Single static HTML file. Tailwind CSS (CDN). Vanilla JS. No framework.
-- **Fonts:** Google Fonts — Inter + JetBrains Mono
+- **Fonts:** Google Fonts — Instrument Sans + JetBrains Mono
 - **No icons library** — Use HTML entities (✓, ✗, ×) to avoid bundle overhead
 
 ## Files
