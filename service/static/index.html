@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" class="dark">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -34,19 +34,28 @@
             --lh-tight: 1.2;
             --lh-snug: 1.4;
             --lh-normal: 1.55;
-            --color-bg: #f8fafc;
-            --color-bg-muted: #f1f5f9;
+            /* Professional teal/slate palette - distinctive, no AI slop */
+            --color-bg: #f0f4f8;
+            --color-bg-muted: #e2e8f0;
             --color-bg-card: #ffffff;
-            --color-border: #e2e8f0;
-            --color-border-muted: #cbd5e1;
-            --color-text-primary: #1e293b;
-            --color-text-secondary: #64748b;
+            --color-border: #cbd5e1;
+            --color-border-light: #e2e8f0;
+            --color-text-primary: #0f172a;
+            --color-text-secondary: #475569;
             --color-text-muted: #94a3b8;
-            --color-accent: #3b82f6;
-            --color-accent-muted: #dbeafe;
-            --color-success: #10b981;
-            --color-warning: #f59e0b;
-            --color-error: #ef4444;
+            /* Teal accent - professional, trustworthy */
+            --color-accent: #0d9488;
+            --color-accent-hover: #0f766e;
+            --color-accent-light: #ccfbf1;
+            /* Semantic colors */
+            --color-success: #059669;
+            --color-success-bg: #d1fae5;
+            --color-warning: #d97706;
+            --color-warning-bg: #fef3c7;
+            --color-error: #dc2626;
+            --color-error-bg: #fee2e2;
+            --color-info: #0284c7;
+            --color-info-bg: #e0f2fe;
         }
         body {
             background-color: var(--color-bg);
@@ -59,25 +68,25 @@
         }
         .font-mono { font-family: 'JetBrains Mono', monospace; }
         ::-webkit-scrollbar { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-track { background: #111827; }
-        ::-webkit-scrollbar-thumb { background: #374151; border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: #4b5563; }
+        ::-webkit-scrollbar-track { background: var(--color-bg-muted); }
+        ::-webkit-scrollbar-thumb { background: var(--color-border); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--color-text-muted); }
         @keyframes shimmer {
             0% { background-position: -200% 0; }
             100% { background-position: 200% 0; }
         }
         .skeleton {
-            background: linear-gradient(90deg, #1f2937 25%, #374151 50%, #1f2937 75%);
+            background: linear-gradient(90deg, var(--color-bg-muted) 25%, var(--color-border) 50%, var(--color-bg-muted) 75%);
             background-size: 200% 100%;
             animation: shimmer 1.5s infinite;
             border-radius: 4px;
         }
         @media (prefers-reduced-motion: reduce) {
-            .skeleton { animation: none; background: #1f2937; }
+            .skeleton { animation: none; background: var(--color-bg-muted); }
             * { transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
         }
         :focus-visible {
-            outline: 2px solid #6366f1;
+            outline: 2px solid var(--color-accent);
             outline-offset: 2px;
             border-radius: 3px;
         }
@@ -93,7 +102,7 @@
             text-transform: uppercase;
             letter-spacing: 0.08em;
             font-weight: 500;
-            color: #6b7280;
+            color: var(--color-text-muted);
             line-height: var(--lh-tight);
         }
         .data-num {
@@ -102,12 +111,19 @@
             font-family: 'JetBrains Mono', monospace;
             font-variant-numeric: tabular-nums;
             line-height: 1;
+            color: var(--color-text-primary);
         }
         .mono-block {
             font-family: 'JetBrains Mono', monospace;
             font-size: var(--text-sm);
             font-variant-numeric: tabular-nums;
         }
+        /* Severity badge colors */
+        .sev-critical { background-color: var(--color-error-bg); color: var(--color-error); border-color: var(--color-error); }
+        .sev-high { background-color: var(--color-warning-bg); color: var(--color-warning); border-color: var(--color-warning); }
+        .sev-medium { background-color: var(--color-warning-bg); color: #b45309; border-color: #d97706; }
+        .sev-low { background-color: var(--color-info-bg); color: var(--color-info); border-color: var(--color-info); }
+        .sev-info { background-color: var(--color-bg-muted); color: var(--color-text-muted); border-color: var(--color-border); }
     </style>
 </head>
 <body class="min-h-screen font-sans">
@@ -152,30 +168,30 @@
         </div>
 
         <!-- Evaluate Form -->
-        <div class="bg-gray-900 border border-gray-800 rounded-lg overflow-hidden">
-            <div class="px-4 py-3 border-b border-gray-800 flex items-center justify-between">
+        <div class="border border-gray-200 rounded-lg overflow-hidden bg-white">
+            <div class="px-4 py-3 border-b border-gray-200 flex items-center justify-between">
                 <div>
-                    <h2 style="font-size: var(--text-base); font-weight: 600; color: #e5e7eb;">Evaluate with Monitored LLM</h2>
-                    <p style="font-size: var(--text-sm); color: #6b7280; margin-top: 2px;">The service calls the configured model and evaluates the response</p>
+                    <h2 style="font-size: var(--text-base); font-weight: 600; color: var(--color-text-primary);">Evaluate with Monitored LLM</h2>
+                    <p style="font-size: var(--text-sm); color: var(--color-text-secondary); margin-top: 2px;">The service calls the configured model and evaluates the response</p>
                 </div>
             </div>
 
             <!-- Monitored Model Display -->
-            <div id="model-display" class="px-4 pt-3 pb-2 border-b border-gray-800/50 hidden">
+            <div id="model-display" class="px-4 pt-3 pb-2 border-b border-gray-100 hidden">
                 <div class="flex items-center gap-6">
                     <div>
                         <span class="lbl">Provider</span>
-                        <span id="cfg-provider" style="font-size: var(--text-sm); font-weight: 500; color: #d1d5db; margin-left: 8px;">—</span>
+                        <span id="cfg-provider" style="font-size: var(--text-sm); font-weight: 500; color: var(--color-text-secondary); margin-left: 8px;">—</span>
                     </div>
                     <div>
                         <span class="lbl">Model</span>
-                        <span id="cfg-model" class="mono-block" style="font-size: var(--text-sm); font-weight: 500; color: #d1d5db; margin-left: 8px;">—</span>
+                        <span id="cfg-model" class="mono-block" style="font-size: var(--text-sm); font-weight: 500; color: var(--color-text-secondary); margin-left: 8px;">—</span>
                     </div>
                 </div>
             </div>
 
             <!-- Example Prompts -->
-            <div class="px-4 pt-3 pb-2 border-b border-gray-800/50">
+            <div class="px-4 pt-3 pb-2 border-b border-gray-100">
                 <p class="lbl mb-2">Try an example</p>
                 <div id="example-prompts" class="flex flex-wrap gap-1.5"></div>
             </div>
@@ -195,7 +211,7 @@
                     </div>
                     <div class="flex items-center justify-between">
                         <div id="eval-result" style="font-size: var(--text-sm); color: var(--color-text-muted);" aria-live="polite" aria-atomic="true"></div>
-                        <button id="eval-submit" class="px-4 py-2 text-sm font-medium rounded border border-gray-300 bg-white hover:bg-gray-50 text-gray-900 transition-colors cursor-pointer">
+                        <button id="eval-submit" style="background: var(--color-accent); color: white; border: none;" class="px-4 py-2 text-sm font-medium rounded hover:bg-opacity-90 transition-colors cursor-pointer">
                             Evaluate
                         </button>
                     </div>
@@ -268,18 +284,18 @@
         <div id="error-display" class="hidden p-4 bg-red-950 border border-red-900 rounded-lg text-red-400" style="font-size: var(--text-sm);"></div>
     </main>
     <footer class="max-w-7xl mx-auto px-6 pb-6">
-        <p style="font-size: var(--text-xs); color: #374151; text-align: center;">Constitutional Governance — Model-agnostic monitoring layer</p>
+        <p style="font-size: var(--text-xs); color: var(--color-text-muted); text-align: center;">Constitutional Governance — Model-agnostic monitoring layer</p>
     </footer>
 
     <script>
     const API = '/api';
 
     const severityColors = {
-        critical: 'bg-red-950 text-red-400 border-red-900',
-        high: 'bg-orange-950 text-orange-400 border-orange-900',
-        medium: 'bg-yellow-950 text-yellow-400 border-yellow-900',
-        low: 'bg-blue-950 text-blue-400 border-blue-900',
-        info: 'bg-gray-800 text-gray-400 border-gray-700'
+        critical: 'background: var(--color-error-bg); color: var(--color-error); border-color: var(--color-error);',
+        high: 'background: var(--color-warning-bg); color: var(--color-warning); border-color: var(--color-warning);',
+        medium: 'background: #fef3c7; color: #b45309; border-color: #d97706;',
+        low: 'background: var(--color-info-bg); color: var(--color-info); border-color: var(--color-info);',
+        info: 'background: var(--color-bg-muted); color: var(--color-text-muted); border-color: var(--color-border);'
     };
 
     const EXAMPLES = [
@@ -428,7 +444,12 @@
     function renderConfig(cfg) {
         _serviceConfig = cfg;
         document.getElementById('model-display').classList.remove('hidden');
-        document.getElementById('cfg-provider').textContent = cfg.monitored_provider || '—';
+        // Use provider_label from API if available, otherwise show a nicer version
+        const providerLabel = cfg.monitored_provider_label || 
+            (cfg.monitored_provider === 'groq' ? 'Groq Cloud' : 
+             cfg.monitored_provider === 'anthropic' ? 'Anthropic' : 
+             cfg.monitored_provider === 'openai' ? 'OpenAI' : cfg.monitored_provider);
+        document.getElementById('cfg-provider').textContent = providerLabel;
         document.getElementById('cfg-model').textContent = cfg.monitored_model || '—';
         document.getElementById('stat-model').textContent =
             (cfg.monitored_model || '?').replace(/-/g, ' ').replace(/\s+/g, ' ').trim();
@@ -619,14 +640,14 @@
             resultDiv.textContent = `${ev.compliant ? 'COMPLIANT' : 'VIOLATIONS FOUND'} — Score: ${((ev.score || 0) * 100).toFixed(0)}% — ${(ev.violations || []).length} violation(s)`;
             resultDiv.style.fontSize = 'var(--text-sm)';
             resultDiv.style.fontWeight = '500';
-            resultDiv.style.color = ev.compliant ? '#34d399' : '#f87171';
+            resultDiv.style.color = ev.compliant ? 'var(--color-success)' : 'var(--color-error)';
 
             evalPanel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 
         } catch (err) {
             resultDiv.textContent = 'Request failed: ' + err.message;
             resultDiv.style.fontSize = 'var(--text-sm)';
-            resultDiv.style.color = '#f87171';
+            resultDiv.style.color = 'var(--color-error)';
         } finally {
             btn.disabled = false;
             btn.removeAttribute('aria-busy');

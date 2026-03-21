@@ -84,8 +84,14 @@ if STATIC_DIR.exists():
 
 import os
 
-MONITORED_PROVIDER = os.environ.get("MONITORED_PROVIDER", "anthropic").lower()
+MONITORED_PROVIDER = os.environ.get("MONITORED_PROVIDER", "groq").lower()
 MONITORED_MODEL = os.environ.get("MONITORED_MODEL", "governance-alpha-7b")
+
+PROVIDER_LABELS = {
+    "groq": "Groq Cloud",
+    "anthropic": "Anthropic",
+    "openai": "OpenAI",
+}
 
 PROVIDER_MODELS = {
     "anthropic": [
@@ -193,6 +199,7 @@ async def get_service_config():
     """Expose service configuration to the dashboard."""
     return {
         "monitored_provider": MONITORED_PROVIDER,
+        "monitored_provider_label": PROVIDER_LABELS.get(MONITORED_PROVIDER, MONITORED_PROVIDER),
         "monitored_model": MONITORED_MODEL,
         "provider_models": PROVIDER_MODELS,
     }

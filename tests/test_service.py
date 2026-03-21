@@ -42,14 +42,16 @@ class TestEvaluateRequestSchema:
             assert res.status_code in (200, 500)
 
     @pytest.mark.asyncio
-    async def test_rejects_llm_response_field(self, client):
-        """llm_response is no longer in the request schema."""
+    async def test_llm_response_not_accepted_as_input(self, client):
+        """llm_response is not accepted as input - the service now calls the LLM internally."""
         res = await client.post("/evaluate", json={
             "user_prompt": "Hello",
-            "llm_response": "Some response",
+            "llm_response": "Some response that should be ignored",
         })
         body = res.json()
-        assert "llm_response" not in body
+        # The service should call the monitored LLM internally and return its response
+        # We verify it returns llm_response in the output (the service-generated response)
+        assert "llm_response" in body
 
     @pytest.mark.asyncio
     async def test_rejects_model_provider_field(self, client):
