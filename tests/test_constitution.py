@@ -100,7 +100,7 @@ class TestConstitutionRules:
         formatted = gov._format_constitution_rules()
 
         assert "verifiable false claims" in formatted
-        assert "cause direct harm" in formatted
+        assert "harm to individuals" in formatted
 
     def test_format_rules_empty_when_no_rules(self):
         """Empty string when constitution has no rules."""
