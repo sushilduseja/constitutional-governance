@@ -453,13 +453,18 @@
 
     function renderConfig(cfg) {
         _serviceConfig = cfg;
-        document.getElementById('model-display').classList.remove('hidden');
-        // Show real provider names - these identify which LLM is being monitored
-        const providerLabel = cfg.monitored_provider_label || cfg.monitored_provider;
-        document.getElementById('cfg-provider').textContent = providerLabel;
-        document.getElementById('cfg-model').textContent = cfg.monitored_model || '—';
-        document.getElementById('stat-model').textContent =
-            (cfg.monitored_model || '?').replace(/-/g, ' ').replace(/\s+/g, ' ').trim();
+        const display = document.getElementById('model-display');
+        if (display) {
+            display.classList.remove('hidden');
+        }
+        const modelEl = document.getElementById('cfg-model');
+        if (modelEl) {
+            modelEl.textContent = cfg.monitored_model || '—';
+        }
+        const statModelEl = document.getElementById('stat-model');
+        if (statModelEl) {
+            statModelEl.textContent = (cfg.monitored_model || '?').replace(/-/g, ' ').replace(/\s+/g, ' ').trim();
+        }
     }
 
     function renderExamples() {
