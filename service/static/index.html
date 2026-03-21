@@ -7,14 +7,14 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <script>
         tailwind.config = {
             darkMode: 'class',
             theme: {
                 extend: {
                     fontFamily: {
-                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                        sans: ['Instrument Sans', 'system-ui', 'sans-serif'],
                         mono: ['JetBrains Mono', 'monospace'],
                     },
                     colors: {
@@ -25,7 +25,25 @@
         }
     </script>
     <style>
-        body { background-color: #0a0e14; color: #e5e7eb; }
+        :root {
+            --text-xs: 0.6875rem;
+            --text-sm: 0.8125rem;
+            --text-base: 0.9375rem;
+            --text-lg: 1.125rem;
+            --text-xl: 1.5rem;
+            --lh-tight: 1.2;
+            --lh-snug: 1.4;
+            --lh-normal: 1.55;
+        }
+        body {
+            background-color: #0a0e14;
+            color: #e5e7eb;
+            font-family: 'Instrument Sans', system-ui, sans-serif;
+            font-size: var(--text-base);
+            line-height: var(--lh-normal);
+            font-kerning: normal;
+            font-variant-numeric: tabular-nums;
+        }
         .font-mono { font-family: 'JetBrains Mono', monospace; }
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: #111827; }
@@ -57,6 +75,26 @@
             from { opacity: 0; transform: translateY(-4px); }
             to { opacity: 1; transform: translateY(0); }
         }
+        .lbl {
+            font-size: var(--text-xs);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            font-weight: 500;
+            color: #6b7280;
+            line-height: var(--lh-tight);
+        }
+        .data-num {
+            font-size: 1.625rem;
+            font-weight: 700;
+            font-family: 'JetBrains Mono', monospace;
+            font-variant-numeric: tabular-nums;
+            line-height: 1;
+        }
+        .mono-block {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: var(--text-sm);
+            font-variant-numeric: tabular-nums;
+        }
     </style>
 </head>
 <body class="min-h-screen font-sans">
@@ -67,12 +105,12 @@
     <div class="max-w-7xl mx-auto p-6 space-y-6">
         <header class="flex items-center justify-between">
             <div>
-                <h1 class="text-xl font-semibold text-white tracking-tight">AI Governance</h1>
-                <p class="text-xs text-gray-500 mt-0.5">Constitutional monitoring dashboard</p>
+                <h1 style="font-size: var(--text-xl); font-weight: 600; color: #f9fafb; letter-spacing: -0.025em; line-height: var(--lh-tight);">AI Governance</h1>
+                <p style="font-size: var(--text-sm); color: #6b7280; margin-top: 2px;">Constitutional monitoring dashboard</p>
             </div>
             <div class="flex items-center gap-3">
-                <span id="last-updated" class="text-[11px] text-gray-600 font-mono" aria-live="polite" aria-label="Last updated"></span>
-                <button id="refresh-btn" aria-label="Refresh dashboard" class="text-xs px-3 py-1.5 rounded bg-gray-800 hover:bg-gray-700 text-gray-300 border border-gray-700 transition-colors cursor-pointer">
+                <span id="last-updated" class="mono-block text-gray-600" aria-live="polite" aria-label="Last updated"></span>
+                <button id="refresh-btn" aria-label="Refresh dashboard" class="text-sm px-3 py-1.5 rounded bg-gray-800 hover:bg-gray-700 text-gray-300 border border-gray-700 transition-colors cursor-pointer">
                     Refresh
                 </button>
             </div>
@@ -83,20 +121,20 @@
         <!-- Stats Row -->
         <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
             <div class="bg-gray-900 border border-gray-800 rounded-lg p-4">
-                <div class="text-[11px] text-gray-500 uppercase tracking-wider mb-1">Total Evaluations</div>
-                <div id="stat-total" class="text-2xl font-semibold font-mono text-gray-100">—</div>
+                <div class="lbl mb-3">Total Evaluations</div>
+                <div id="stat-total" class="data-num text-gray-100">—</div>
             </div>
             <div class="bg-gray-900 border border-gray-800 rounded-lg p-4">
-                <div class="text-[11px] text-gray-500 uppercase tracking-wider mb-1">Compliance Rate</div>
-                <div id="stat-compliance" class="text-2xl font-semibold font-mono">—</div>
+                <div class="lbl mb-3">Compliance Rate</div>
+                <div id="stat-compliance" class="data-num">—</div>
             </div>
             <div class="bg-gray-900 border border-gray-800 rounded-lg p-4">
-                <div class="text-[11px] text-gray-500 uppercase tracking-wider mb-1">Active Violations</div>
-                <div id="stat-violations" class="text-2xl font-semibold font-mono">—</div>
+                <div class="lbl mb-3">Active Violations</div>
+                <div id="stat-violations" class="data-num">—</div>
             </div>
             <div class="bg-gray-900 border border-gray-800 rounded-lg p-4">
-                <div class="text-[11px] text-gray-500 uppercase tracking-wider mb-1">Monitored Model</div>
-                <div id="stat-model" class="text-lg font-semibold font-mono text-indigo-400">—</div>
+                <div class="lbl mb-3">Monitored Model</div>
+                <div id="stat-model" style="font-size: var(--text-lg); font-weight: 600; color: #818cf8; font-variant-numeric: tabular-nums;">—</div>
             </div>
         </div>
 
@@ -104,48 +142,46 @@
         <div class="bg-gray-900 border border-gray-800 rounded-lg overflow-hidden">
             <div class="px-4 py-3 border-b border-gray-800 flex items-center justify-between">
                 <div>
-                    <h2 class="text-sm font-medium text-gray-200">Evaluate with Monitored LLM</h2>
-                    <p class="text-[10px] text-gray-600 mt-0.5">The service calls the configured model and evaluates the response</p>
+                    <h2 style="font-size: var(--text-base); font-weight: 600; color: #e5e7eb;">Evaluate with Monitored LLM</h2>
+                    <p style="font-size: var(--text-sm); color: #6b7280; margin-top: 2px;">The service calls the configured model and evaluates the response</p>
                 </div>
             </div>
 
             <!-- Monitored Model Display -->
             <div id="model-display" class="px-4 pt-3 pb-2 border-b border-gray-800/50 hidden">
-                <div class="flex items-center gap-4 text-[11px]">
+                <div class="flex items-center gap-6">
                     <div>
-                        <span class="text-gray-600 uppercase tracking-wider">Provider</span>
-                        <span id="cfg-provider" class="ml-2 text-gray-300 font-medium">—</span>
+                        <span class="lbl">Provider</span>
+                        <span id="cfg-provider" style="font-size: var(--text-sm); font-weight: 500; color: #d1d5db; margin-left: 8px;">—</span>
                     </div>
                     <div>
-                        <span class="text-gray-600 uppercase tracking-wider">Model</span>
-                        <span id="cfg-model" class="ml-2 text-gray-300 font-medium font-mono">—</span>
+                        <span class="lbl">Model</span>
+                        <span id="cfg-model" class="mono-block" style="font-size: var(--text-sm); font-weight: 500; color: #d1d5db; margin-left: 8px;">—</span>
                     </div>
                 </div>
             </div>
 
             <!-- Example Prompts -->
             <div class="px-4 pt-3 pb-2 border-b border-gray-800/50">
-                <p class="text-[11px] text-gray-500 uppercase tracking-wider mb-2">Try an example</p>
+                <p class="lbl mb-2">Try an example</p>
                 <div id="example-prompts" class="flex flex-wrap gap-1.5"></div>
             </div>
 
             <div class="p-4">
                 <div class="grid grid-cols-1 gap-3 mb-3">
                     <div>
-                        <label class="block text-[11px] text-gray-500 uppercase tracking-wider mb-1">User Prompt</label>
+                        <label class="block lbl mb-1">User Prompt</label>
                         <input id="eval-prompt" type="text" placeholder="Ask the monitored model anything..." aria-label="User prompt"
-                            class="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-sm text-gray-200 placeholder-gray-400 focus:border-gray-600 transition-colors">
+                            style="width: 100%; background: #1f2937; border: 1px solid #374151; border-radius: 6px; padding: 10px 12px; font-size: var(--text-base); color: #e5e7eb; placeholder-gray-400; transition-colors;">
                     </div>
                     <div>
-                        <label class="block text-[11px] text-gray-500 uppercase tracking-wider mb-1">
-                            Context <span class="text-gray-700 normal-case tracking-normal">(optional)</span>
-                        </label>
+                        <label class="block lbl mb-1">Context <span style="text-transform: none; letter-spacing: 0; color: #4b5563; font-size: var(--text-xs);">(optional)</span></label>
                         <input id="eval-context" type="text" placeholder="Additional context or conversation history..." aria-label="Context (optional)"
-                            class="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-sm text-gray-200 placeholder-gray-400 focus:border-gray-600 transition-colors">
+                            style="width: 100%; background: #1f2937; border: 1px solid #374151; border-radius: 6px; padding: 10px 12px; font-size: var(--text-base); color: #e5e7eb; placeholder-gray-400; transition-colors;">
                     </div>
                 </div>
                 <div class="flex items-center justify-between">
-                    <div id="eval-result" class="text-xs text-gray-500" aria-live="polite" aria-atomic="true"></div>
+                    <div id="eval-result" style="font-size: var(--text-sm); color: #6b7280;" aria-live="polite" aria-atomic="true"></div>
                     <button id="eval-submit" class="px-4 py-2 text-sm font-medium rounded bg-indigo-600 hover:bg-indigo-500 text-white transition-colors cursor-pointer">
                         Evaluate
                     </button>
@@ -155,12 +191,12 @@
                 <div id="eval-result-panel" class="mt-4 hidden">
                     <div class="border-t border-gray-800 pt-4 space-y-3">
                         <div>
-                            <p class="text-[10px] text-gray-600 uppercase tracking-wider mb-1">LLM Response</p>
-                            <div id="eval-llm-response" class="bg-gray-950 border border-gray-800 rounded p-3 text-xs text-gray-300 font-mono whitespace-pre-wrap max-h-40 overflow-y-auto"></div>
+                            <p class="lbl mb-2">LLM Response</p>
+                            <div id="eval-llm-response" class="mono-block bg-gray-950 border border-gray-800 rounded p-3 text-gray-300 whitespace-pre-wrap max-h-40 overflow-y-auto" style="line-height: 1.6;"></div>
                         </div>
                         <div id="eval-violations-panel">
-                            <p class="text-[10px] text-gray-600 uppercase tracking-wider mb-1">Evaluation</p>
-                            <div id="eval-violations-content" class="text-xs"></div>
+                            <p class="lbl mb-2">Evaluation</p>
+                            <div id="eval-violations-content" style="font-size: var(--text-sm);"></div>
                         </div>
                     </div>
                 </div>
@@ -176,24 +212,24 @@
             <!-- Audit Log -->
             <div class="lg:col-span-2 bg-gray-900 border border-gray-800 rounded-lg overflow-hidden">
                 <div class="px-4 py-3 border-b border-gray-800 flex items-center justify-between">
-                    <h2 class="text-sm font-medium text-gray-200">Audit Log</h2>
-                    <span id="log-count" class="text-[11px] text-gray-600 font-mono">—</span>
+                    <h2 style="font-size: var(--text-base); font-weight: 600; color: #e5e7eb;">Audit Log</h2>
+                    <span id="log-count" class="mono-block" style="font-size: var(--text-xs); color: #6b7280;">—</span>
                 </div>
                 <div class="overflow-auto" style="max-height: 420px;">
-                    <table class="w-full text-xs">
+                    <table style="width: 100%;">
                         <thead class="bg-gray-950 sticky top-0">
-                            <tr class="text-left text-[10px] text-gray-600 uppercase tracking-wider">
-                                <th class="px-3 py-2 w-40">Time</th>
-                                <th class="px-3 py-2 w-28">Model</th>
-                                <th class="px-3 py-2 w-20 text-center">Status</th>
-                                <th class="px-3 py-2 w-16 text-center">Score</th>
-                                <th class="px-3 py-2 w-16 text-center">Violations</th>
+                            <tr class="text-left">
+                                <th class="px-3 py-2.5 w-40"><span class="lbl">Time</span></th>
+                                <th class="px-3 py-2.5 w-28"><span class="lbl">Model</span></th>
+                                <th class="px-3 py-2.5 w-20 text-center"><span class="lbl">Status</span></th>
+                                <th class="px-3 py-2.5 w-16 text-center"><span class="lbl">Score</span></th>
+                                <th class="px-3 py-2.5 w-16 text-center"><span class="lbl">Violations</span></th>
                             </tr>
                         </thead>
-                        <tbody id="audit-log-body" class="font-mono">
-                            <tr id="skeleton-row-1"><td class="px-3 py-2"><div class="skeleton h-3 w-24"></div></td><td class="px-3 py-2"><div class="skeleton h-3 w-20"></div></td><td class="px-3 py-2"><div class="skeleton h-3 w-12"></div></td><td class="px-3 py-2"><div class="skeleton h-3 w-12"></div></td><td class="px-3 py-2"><div class="skeleton h-3 w-8"></div></td></tr>
-                            <tr id="skeleton-row-2"><td class="px-3 py-2"><div class="skeleton h-3 w-24"></div></td><td class="px-3 py-2"><div class="skeleton h-3 w-20"></div></td><td class="px-3 py-2"><div class="skeleton h-3 w-12"></div></td><td class="px-3 py-2"><div class="skeleton h-3 w-12"></div></td><td class="px-3 py-2"><div class="skeleton h-3 w-8"></div></td></tr>
-                            <tr id="skeleton-row-3"><td class="px-3 py-2"><div class="skeleton h-3 w-24"></div></td><td class="px-3 py-2"><div class="skeleton h-3 w-20"></div></td><td class="px-3 py-2"><div class="skeleton h-3 w-12"></div></td><td class="px-3 py-2"><div class="skeleton h-3 w-12"></div></td><td class="px-3 py-2"><div class="skeleton h-3 w-8"></div></td></tr>
+                        <tbody id="audit-log-body" class="mono-block" style="font-size: var(--text-sm);">
+                            <tr id="skeleton-row-1"><td class="px-3 py-2.5"><div class="skeleton" style="height: 14px; width: 96px;"></div></td><td class="px-3 py-2.5"><div class="skeleton" style="height: 14px; width: 80px;"></div></td><td class="px-3 py-2.5"><div class="skeleton" style="height: 14px; width: 48px;"></div></td><td class="px-3 py-2.5"><div class="skeleton" style="height: 14px; width: 48px;"></div></td><td class="px-3 py-2.5"><div class="skeleton" style="height: 14px; width: 32px;"></div></td></tr>
+                            <tr id="skeleton-row-2"><td class="px-3 py-2.5"><div class="skeleton" style="height: 14px; width: 96px;"></div></td><td class="px-3 py-2.5"><div class="skeleton" style="height: 14px; width: 80px;"></div></td><td class="px-3 py-2.5"><div class="skeleton" style="height: 14px; width: 48px;"></div></td><td class="px-3 py-2.5"><div class="skeleton" style="height: 14px; width: 48px;"></div></td><td class="px-3 py-2.5"><div class="skeleton" style="height: 14px; width: 32px;"></div></td></tr>
+                            <tr id="skeleton-row-3"><td class="px-3 py-2.5"><div class="skeleton" style="height: 14px; width: 96px;"></div></td><td class="px-3 py-2.5"><div class="skeleton" style="height: 14px; width: 80px;"></div></td><td class="px-3 py-2.5"><div class="skeleton" style="height: 14px; width: 48px;"></div></td><td class="px-3 py-2.5"><div class="skeleton" style="height: 14px; width: 48px;"></div></td><td class="px-3 py-2.5"><div class="skeleton" style="height: 14px; width: 32px;"></div></td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -202,24 +238,24 @@
             <!-- Constitution Rules -->
             <div class="bg-gray-900 border border-gray-800 rounded-lg overflow-hidden">
                 <div class="px-4 py-3 border-b border-gray-800 flex items-center justify-between">
-                    <h2 class="text-sm font-medium text-gray-200">Constitution Rules</h2>
-                    <span id="rules-count" class="text-[11px] text-gray-600 font-mono">—</span>
+                    <h2 style="font-size: var(--text-base); font-weight: 600; color: #e5e7eb;">Constitution Rules</h2>
+                    <span id="rules-count" class="mono-block" style="font-size: var(--text-xs); color: #6b7280;">—</span>
                 </div>
                 <div id="rules-panel" class="overflow-auto" style="max-height: 420px;">
                     <div id="rules-skeleton" class="p-3 space-y-2">
-                        <div class="skeleton h-16 w-full"></div>
-                        <div class="skeleton h-16 w-full"></div>
-                        <div class="skeleton h-16 w-full"></div>
+                        <div class="skeleton" style="height: 64px; width: 100%;"></div>
+                        <div class="skeleton" style="height: 64px; width: 100%;"></div>
+                        <div class="skeleton" style="height: 64px; width: 100%;"></div>
                     </div>
                 </div>
             </div>
         </div>
 
         <!-- Error Display -->
-        <div id="error-display" class="hidden p-4 bg-red-950 border border-red-900 rounded-lg text-red-400 text-xs"></div>
+        <div id="error-display" class="hidden p-4 bg-red-950 border border-red-900 rounded-lg text-red-400" style="font-size: var(--text-sm);"></div>
     </main>
     <footer class="max-w-7xl mx-auto px-6 pb-6">
-        <p class="text-[10px] text-gray-700 text-center">Constitutional Governance — Model-agnostic monitoring layer</p>
+        <p style="font-size: var(--text-xs); color: #374151; text-align: center;">Constitutional Governance — Model-agnostic monitoring layer</p>
     </footer>
 
     <script>
@@ -389,11 +425,12 @@
         const container = document.getElementById('example-prompts');
         container.innerHTML = EXAMPLES.map((ex, i) => `
             <button type="button"
-                class="example-btn text-[10px] px-3 py-2 rounded border border-gray-700 bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-gray-200 hover:border-gray-600 transition-colors cursor-pointer whitespace-nowrap"
+                class="example-btn rounded border border-gray-700 bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-gray-200 hover:border-gray-600 transition-colors cursor-pointer whitespace-nowrap"
+                style="font-size: var(--text-sm); font-weight: 500; padding: 8px 14px;"
                 data-index="${i}"
                 title="${ex.prompt.replace(/"/g, '&quot;')}">
-                <span class="text-gray-600">${ex.category}</span>
-                <span class="text-gray-500 mx-1">·</span>
+                <span style="color: #6b7280;">${ex.category}</span>
+                <span style="color: #4b5563; margin: 0 6px;">·</span>
                 <span>${ex.label}</span>
             </button>
         `).join('');
@@ -409,26 +446,26 @@
         const resultsContainer = document.getElementById('example-results-container');
         resultsContainer.innerHTML = EXAMPLES.map((ex, i) => `
             <div id="example-result-${i}" class="example-result bg-gray-900 border border-gray-800 rounded-lg overflow-hidden">
-                <div class="px-4 py-2 border-b border-gray-800 flex items-center justify-between">
-                    <div class="flex items-center gap-2">
-                        <span class="text-[10px] px-1.5 py-0.5 rounded bg-gray-800 text-gray-500 border border-gray-700">${ex.category}</span>
-                        <span class="text-[11px] text-gray-400">${ex.label}</span>
+                <div class="px-4 py-3 border-b border-gray-800 flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <span style="font-size: var(--text-xs); font-weight: 500; padding: 2px 8px; border-radius: 4px; background: #1f2937; color: #6b7280; border: 1px solid #374151;">${ex.category}</span>
+                        <span style="font-size: var(--text-sm); color: #9ca3af; font-weight: 500;">${ex.label}</span>
                     </div>
-                    <button onclick="closeExample(${i})" class="text-[10px] px-3 py-2 text-gray-600 hover:text-gray-400 cursor-pointer rounded hover:bg-gray-800 transition-colors">&#10005; close</button>
+                    <button onclick="closeExample(${i})" style="font-size: var(--text-sm); padding: 8px 14px; color: #6b7280; cursor: pointer; border-radius: 6px; transition: background-color 0.15s;" onmouseover="this.style.backgroundColor='#1f2937'; this.style.color='#9ca3af';" onmouseout="this.style.backgroundColor=''; this.style.color='#6b7280';">&#10005; close</button>
                 </div>
-                <div class="p-4 space-y-3">
+                <div class="p-4 space-y-4">
                     <div>
-                        <p class="text-[10px] text-gray-600 uppercase tracking-wider mb-1">User Prompt</p>
-                        <p class="text-xs text-gray-400 font-mono">${ex.prompt.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</p>
+                        <p class="lbl mb-2">User Prompt</p>
+                        <p class="mono-block text-gray-400" style="line-height: 1.6;">${ex.prompt.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</p>
                     </div>
                     <div>
-                        <p class="text-[10px] text-gray-600 uppercase tracking-wider mb-1">LLM Response</p>
-                        <div class="bg-gray-950 border border-gray-800 rounded p-3 text-xs text-gray-300 font-mono whitespace-pre-wrap max-h-40 overflow-y-auto">${ex.response.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div>
+                        <p class="lbl mb-2">LLM Response</p>
+                        <div class="mono-block bg-gray-950 border border-gray-800 rounded p-3 text-gray-300 whitespace-pre-wrap max-h-40 overflow-y-auto" style="line-height: 1.6;">${ex.response.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div>
                     </div>
                     <div>
-                        <p class="text-[10px] text-gray-600 uppercase tracking-wider mb-1">Evaluation</p>
-                        <div id="example-eval-${i}" class="text-xs">
-                            <div class="skeleton h-6 w-32"></div>
+                        <p class="lbl mb-2">Evaluation</p>
+                        <div id="example-eval-${i}" style="font-size: var(--text-sm);">
+                            <div class="skeleton" style="height: 24px; width: 128px;"></div>
                         </div>
                     </div>
                 </div>
@@ -482,23 +519,23 @@
         const status = eval_.status;
         const notes = eval_.notes;
 
-        let html = `<div class="border rounded p-3 ${scoreClass} border-opacity-30">
-            <div class="flex items-center gap-3 mb-2">
-                <span class="text-sm font-semibold font-mono">${scorePct}%</span>
-                <span class="text-xs font-medium">${compliant ? 'COMPLIANT' : 'VIOLATIONS FOUND'}</span>
-                ${status !== 'success' ? `<span class="text-[10px] px-1.5 py-0.5 rounded bg-gray-800 text-gray-400 border border-gray-700">${status}</span>` : ''}
+        let html = `<div class="border rounded p-4 ${scoreClass}" style="border-color: rgba(75,85,99,0.3);">
+            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+                <span class="data-num">${scorePct}%</span>
+                <span style="font-size: var(--text-sm); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">${compliant ? 'COMPLIANT' : 'VIOLATIONS FOUND'}</span>
+                ${status !== 'success' ? `<span style="font-size: var(--text-xs); padding: 2px 8px; border-radius: 4px; background: #1f2937; color: #9ca3af; border: 1px solid #374151;">${status}</span>` : ''}
             </div>`;
 
         if (violations.length > 0) {
-            html += `<div class="space-y-1.5 mt-2">`;
+            html += `<div style="margin-top: 12px;">`;
             violations.forEach(v => {
                 const sev = v.severity || 'info';
-                html += `<div class="flex items-start gap-2">
-                    <span class="text-[9px] px-1 py-0.5 rounded border font-medium shrink-0 mt-0.5 ${severityColors[sev] || severityColors.info}">${sev.toUpperCase()}</span>
+                html += `<div style="display: flex; align-items: flex-start; gap: 10px; margin-bottom: 10px;">
+                    <span style="font-size: var(--text-xs); font-weight: 500; padding: 2px 6px; border-radius: 4px; border: 1px solid; flex-shrink: 0; margin-top: 1px; ${severityColors[sev] || severityColors.info}">${sev.toUpperCase()}</span>
                     <div>
-                        <span class="text-[10px] font-mono text-gray-500">${v.rule_id || 'unknown'}</span>
-                        <p class="text-[11px] text-gray-300">${(v.explanation || '').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</p>
-                        ${v.quote ? `<p class="text-[10px] font-mono text-gray-600 mt-0.5 italic border-l-2 border-gray-700 pl-2">"${v.quote.replace(/</g, '&lt;').replace(/>/g, '&gt;')}"</p>` : ''}
+                        <span class="mono-block" style="font-size: var(--text-xs); color: #6b7280;">${v.rule_id || 'unknown'}</span>
+                        <p style="font-size: var(--text-sm); color: #d1d5db; line-height: 1.5; margin-top: 2px;">${(v.explanation || '').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</p>
+                        ${v.quote ? `<p class="mono-block" style="font-size: var(--text-xs); color: #6b7280; margin-top: 4px; font-style: italic; border-left: 2px solid #374151; padding-left: 8px; line-height: 1.5;">"${v.quote.replace(/</g, '&lt;').replace(/>/g, '&gt;')}"</p>` : ''}
                     </div>
                 </div>`;
             });
@@ -506,11 +543,11 @@
         }
 
         if (notes && status === 'success') {
-            html += `<p class="text-[10px] text-gray-500 mt-2 italic">${notes}</p>`;
+            html += `<p style="font-size: var(--text-sm); color: #6b7280; margin-top: 8px; font-style: italic;">${notes}</p>`;
         }
 
         if (eval_.failure_reason) {
-            html += `<p class="text-[10px] text-amber-400 mt-2">Failure: ${eval_.failure_reason}</p>`;
+            html += `<p style="font-size: var(--text-sm); color: #fbbf24; margin-top: 8px;">Failure: ${eval_.failure_reason}</p>`;
         }
 
         html += `</div>`;
@@ -567,13 +604,16 @@
             // Status line
             const ev = data.evaluation;
             resultDiv.textContent = `${ev.compliant ? 'COMPLIANT' : 'VIOLATIONS FOUND'} — Score: ${((ev.score || 0) * 100).toFixed(0)}% — ${(ev.violations || []).length} violation(s)`;
-            resultDiv.className = `text-xs font-medium ${ev.compliant ? 'text-emerald-400' : 'text-red-400'}`;
+            resultDiv.style.fontSize = 'var(--text-sm)';
+            resultDiv.style.fontWeight = '500';
+            resultDiv.style.color = ev.compliant ? '#34d399' : '#f87171';
 
             evalPanel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 
         } catch (err) {
             resultDiv.textContent = 'Request failed: ' + err.message;
-            resultDiv.className = 'text-xs text-red-400';
+            resultDiv.style.fontSize = 'var(--text-sm)';
+            resultDiv.style.color = '#f87171';
         } finally {
             btn.disabled = false;
             btn.removeAttribute('aria-busy');
@@ -587,7 +627,9 @@
     function updateStats(stats, constitutionVersion) {
         document.getElementById('stat-total').textContent = stats.total_evaluations.toLocaleString();
         document.getElementById('stat-compliance').textContent = (stats.compliance_rate ?? 0) + '%';
-        document.getElementById('stat-compliance').className = `text-2xl font-semibold font-mono ${(stats.compliance_rate ?? 0) >= 90 ? 'text-emerald-400' : (stats.compliance_rate ?? 0) >= 70 ? 'text-amber-400' : 'text-red-400'}`;
+        document.getElementById('stat-compliance').style.color =
+            (stats.compliance_rate ?? 0) >= 90 ? '#34d399' :
+            (stats.compliance_rate ?? 0) >= 70 ? '#fbbf24' : '#f87171';
         document.getElementById('stat-violations').textContent = (stats.active_violations ?? 0).toLocaleString();
     }
 
@@ -597,16 +639,16 @@
         document.getElementById('log-count').textContent = `${entries.length} records`;
 
         if (entries.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="5" class="px-3 py-8 text-center text-gray-600 text-xs">No evaluations yet. Use the form above to evaluate a response.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="5" style="padding: 32px; text-align: center; color: #6b7280; font-size: var(--text-sm);">No evaluations yet. Use the form above to evaluate a response.</td></tr>';
             return;
         }
 
         tbody.innerHTML = entries.map(e => `
             <tr class="border-t border-gray-800/50 hover:bg-gray-800/30 transition-colors ${e.status === 'failed' ? 'opacity-60' : ''}">
-                <td class="px-3 py-2.5 text-gray-500">${formatTime(e.timestamp)}</td>
-                <td class="px-3 py-2.5 text-gray-400 truncate max-w-[110px]" title="${e.model_name}">${e.model_name}</td>
+                <td class="px-3 py-2.5 text-gray-500" style="white-space: nowrap;">${formatTime(e.timestamp)}</td>
+                <td class="px-3 py-2.5 text-gray-400 truncate max-w-[110px]" title="${e.model_name}" style="max-width: 110px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${e.model_name}</td>
                 <td class="px-3 py-2.5 text-center">${statusBadge(e.status, e.compliant)}</td>
-                <td class="px-3 py-2.5 text-center ${colorForScore(e.score)}">${(e.score * 100).toFixed(0)}%</td>
+                <td class="px-3 py-2.5 text-center" style="${colorForScore(e.score)}">${(e.score * 100).toFixed(0)}%</td>
                 <td class="px-3 py-2.5 text-center ${(e.violations?.length ?? 0) > 0 ? 'text-red-400' : 'text-gray-600'}">${e.violations?.length ?? 0}</td>
             </tr>
         `).join('');
@@ -618,15 +660,15 @@
         document.getElementById('rules-count').textContent = `${enabled}/${constitution.rules.length} active`;
 
         panel.innerHTML = constitution.rules.map(r => `
-            <div class="p-3 border-b border-gray-800/50 last:border-0">
-                <div class="flex items-start justify-between gap-2 mb-1.5">
-                    <div class="flex items-center gap-2 flex-wrap">
-                        <span class="text-[10px] font-mono text-gray-600">${r.id}</span>
-                        <span class="text-[10px] px-1.5 py-0.5 rounded border font-medium ${severityColors[r.severity] || severityColors.info}">${r.severity.toUpperCase()}</span>
+            <div style="padding: 12px; border-bottom: 1px solid rgba(55,65,81,0.5);" class="last:border-0">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; margin-bottom: 6px;">
+                    <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                        <span class="mono-block" style="font-size: var(--text-xs); color: #6b7280;">${r.id}</span>
+                        <span style="font-size: var(--text-xs); font-weight: 500; padding: 2px 6px; border-radius: 4px; border: 1px solid; ${severityColors[r.severity] || severityColors.info}">${r.severity.toUpperCase()}</span>
                     </div>
-                    <span class="text-[10px] ${r.enabled ? 'text-emerald-500' : 'text-gray-700'}">${r.enabled ? 'on' : 'off'}</span>
+                    <span style="font-size: var(--text-xs); ${r.enabled ? 'color: #34d399;' : 'color: #374151;'}">${r.enabled ? 'on' : 'off'}</span>
                 </div>
-                <p class="text-[11px] text-gray-400 leading-relaxed">${r.text}</p>
+                <p style="font-size: var(--text-sm); color: #9ca3af; line-height: 1.5;">${r.text}</p>
             </div>
         `).join('');
     }
