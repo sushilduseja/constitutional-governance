@@ -66,14 +66,21 @@ cp .env.example .env
 ```python
 from sdk.governance import Governance
 
-gov = Governance(mode="async")
+gov = Governance(
+    constitution_path="constitution/rules/default_v1.json",
+    mode="async",
+)
 
 raw_response = anthropic_client.messages.create(
     model="governance-alpha-7b",
     messages=[{"role": "user", "content": "What is the SEC's regulation for crypto?"}]
 )
 
-gov.wrap(provider="anthropic", raw_response=raw_response)
+gov.wrap(
+    provider="anthropic",
+    raw_response=raw_response,
+    user_prompt="What is the SEC's regulation for crypto?",
+)
 # Response returns immediately — evaluation happens in background
 ```
 
@@ -125,7 +132,7 @@ Rules are plain-English JSON in `constitution/rules/`:
     {
       "id": "rule_truth_001",
       "text": "The AI must not make verifiable false claims about real-world facts.",
-      "severity": "critical",
+      "severity": "high",
       "enabled": true,
       "tags": ["truthfulness", "accuracy"]
     }
