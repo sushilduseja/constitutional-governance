@@ -218,3 +218,6 @@ logs
 *.temp
 .DS_Store
 Thumbs.db
+
+# Local tooling (do not commit)
+.gstack/

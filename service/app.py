@@ -88,7 +88,7 @@ MONITORED_PROVIDER = os.environ.get("MONITORED_PROVIDER", "groq").lower()
 MONITORED_MODEL = os.environ.get("MONITORED_MODEL", "governance-alpha-7b")
 
 PROVIDER_LABELS = {
-    "groq": "Groq Cloud",
+    "groq": "Groq",
     "anthropic": "Anthropic",
     "openai": "OpenAI",
 }
