@@ -2,9 +2,26 @@
 Anthropic (Claude) adapter.
 """
 
+import logging
+import os
+from pathlib import Path
 from typing import Any
 
 from sdk.adapters.base import LLMAdapter, LLMResponse
+
+logger = logging.getLogger(__name__)
+
+
+def _ensure_env_loaded() -> None:
+    """Load .env file from project root if not already in environment."""
+    if os.environ.get("ANTHROPIC_API_KEY"):
+        return
+    try:
+        from dotenv import load_dotenv
+        project_root = Path(__file__).resolve().parent.parent.parent
+        load_dotenv(project_root / ".env", override=False)
+    except Exception:
+        pass
 
 
 class AnthropicAdapter(LLMAdapter):
@@ -17,7 +34,13 @@ class AnthropicAdapter(LLMAdapter):
     def call(self, prompt: str, **kwargs) -> LLMResponse:
         import anthropic
 
-        client = anthropic.Anthropic()
+        _ensure_env_loaded()
+        if not os.environ.get("ANTHROPIC_API_KEY"):
+            raise PermissionError(
+                "ANTHROPIC_API_KEY not set. Add it to your .env file or set the environment variable."
+            )
+
+        client = anthropic.Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY"))
         model = kwargs.get("model", "claude-3-5-sonnet-20260220")
 
         raw = client.messages.create(

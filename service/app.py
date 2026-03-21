@@ -7,14 +7,14 @@ Run:
 
 from __future__ import annotations
 
+from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
-from typing import Optional
 from pathlib import Path
-from dotenv import load_dotenv
+from typing import Optional
 import asyncio
 import time
 import logging
@@ -26,6 +26,8 @@ from service.audit import AuditStore
 from service.evaluator import Evaluator
 from service.analytics import Analytics, GoldenSetChecker
 
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 

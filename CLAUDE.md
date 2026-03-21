@@ -124,6 +124,9 @@ If modifying the interpreter prompt or constitution format:
 
 1. Copy `.env.example` to `.env`
 2. Add your Groq API key: `GROQ_API_KEY=your_key_here`
-3. Get a free Groq API key at: https://console.groq.com/keys
-4. Run: `uvicorn service.app:app --reload`
-5. Access dashboard at: http://localhost:8000
+3. If using Anthropic or OpenAI as the monitored model, add those keys too (`ANTHROPIC_API_KEY`, `OPENAI_API_KEY`)
+4. Get a free Groq API key at: https://console.groq.com/keys
+5. Run: `uvicorn service.app:app --reload`
+6. Access dashboard at: http://localhost:8000
+
+**Note:** All adapters load `.env` automatically — no need to export environment variables manually.

@@ -7,6 +7,7 @@ Uses Groq's free tier LLM API (OpenAI-compatible).
 import logging
 import os
 import time
+from pathlib import Path
 from typing import Any, Optional
 
 from sdk.adapters.base import LLMAdapter, LLMResponse
@@ -32,6 +33,18 @@ _RETRYABLE_ERRORS = frozenset([
 ])
 
 
+def _ensure_env_loaded() -> None:
+    """Load .env file from project root if not already in environment."""
+    if os.environ.get(GROQ_API_KEY_ENV):
+        return
+    try:
+        from dotenv import load_dotenv
+        project_root = Path(__file__).resolve().parent.parent.parent
+        load_dotenv(project_root / ".env", override=False)
+    except Exception:
+        pass
+
+
 class GroqAdapter(LLMAdapter):
     """Adapter for Groq API (free tier, OpenAI-compatible)."""
 
@@ -40,7 +53,11 @@ class GroqAdapter(LLMAdapter):
         api_key: Optional[str] = None,
         models: Optional[list[str]] = None,
     ):
+        _ensure_env_loaded()
         self._api_key = api_key or os.environ.get(GROQ_API_KEY_ENV)
+        logger.debug(f"GroqAdapter init: api_key provided={bool(api_key)}, final_key={bool(self._api_key)}")
+        if not self._api_key:
+            logger.warning(f"GROQ_API_KEY not found. Set it in the .env file or pass api_key to GroqAdapter()")
         self._models = models or DEFAULT_MODELS
 
     @property
