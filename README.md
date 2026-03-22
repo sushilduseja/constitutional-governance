@@ -1,4 +1,4 @@
-# Constitutional Governance SDK
+# Constitutional Governance SDK [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/sushilduseja/constitutional-governance)
 
 A model-agnostic constitutional AI monitoring layer for production LLM applications. Every LLM output is evaluated against a plain-English constitution using a separate LLM as interpreter — without blocking the user's response.
 
